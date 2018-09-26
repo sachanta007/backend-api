@@ -1,13 +1,11 @@
 import jwt
 from flask import Flask,g,request,json,render_template
-
+from datetime import datetime
 class Jwt:
 	@staticmethod
 	def encode_auth_token(user_id):
 	    try:
 	        payload = {
-	            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1, minutes=0, seconds=0),
-	            'iat': datetime.datetime.utcnow(),
 	            'sub': user_id
 	        }
 	        return jwt.encode(
