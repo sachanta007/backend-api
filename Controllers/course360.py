@@ -37,6 +37,16 @@ def activate_user(email):
 	except Exception as e:
 		return  jsonify(e), 500
 
+@app.route("/securityQuestion/<email>", methods=['GET'])
+def security_question(email):
+	try:
+		response = Service.security_question(email)
+		if(response):
+			return jsonify({'question': response}), 200
+		else:
+			return jsonify({'Error':"response"}), 500	
+	except Exception as e:
+		return jsonify(e), 500
 
 if __name__ == '__main__':
     #app.debug = True
