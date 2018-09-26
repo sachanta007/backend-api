@@ -39,7 +39,7 @@ class Service:
 				conn.close()
 
 	@staticmethod
-	def activate_user(email,password):
+	def activate_user(email):
 		try:
 			conn = PgConfig.db()
 			if(conn):
