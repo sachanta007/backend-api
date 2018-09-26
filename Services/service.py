@@ -1,4 +1,3 @@
-
 from Services.pg_config import PgConfig
 from Services.email_config import Email
 from Services.crypto import Crypto
@@ -52,10 +51,8 @@ class Service:
 				conn.commit()
 				return True
 			else:
-				print("Hello")
 				return "Unable to connect"
 		except Exception as e:
-			print(e)
 			return {"Error": e}
 		finally:
 				cur.close()
@@ -86,6 +83,31 @@ class Service:
 			print(e)
 			return {"Error occured": e}
 
+		finally:
+				cur.close()
+				conn.close()
+
+	@staticmethod
+	def security_question(email):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+
+				select_query = "SELECT security_question FROM users WHERE email LIKE %s"
+				cur.execute(select_query, (email,))
+				question = cur.fetchone()[0]
+
+				if(question):
+					return question
+				else:
+					return "Question not found"
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return e
 		finally:
 				cur.close()
 				conn.close()
