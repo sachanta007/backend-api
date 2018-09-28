@@ -53,6 +53,17 @@ def security_question(email):
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route("/sendOtp/email/<email>/answer/<answer>", methods=['GET'])
+def send_otp(email, answer):
+	try:
+		response = Service.send_otp(email, answer)
+		if(response == True):
+			return jsonify({'data': response}), 200
+		else:
+			return jsonify({'Error': response}), 500	
+	except Exception as e:
+		return jsonify(e), 500
+
 if __name__ == '__main__':
     #app.debug = True
     app.run(host = '0.0.0.0', port = 5000)
