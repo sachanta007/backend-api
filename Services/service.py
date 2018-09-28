@@ -147,7 +147,7 @@ class Service:
 					else:
 						return "Wrong answer"
 				else:
-					return "Question not found"
+					return "Invalid request"
 			else:
 				return "Unable to connect"
 		except Exception as e:
