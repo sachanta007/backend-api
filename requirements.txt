@@ -5,3 +5,4 @@ pyjwt
 boto
 jinja2
 passlib
+flask-cors
