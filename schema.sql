@@ -1,15 +1,15 @@
 CREATE TABLE IF NOT EXISTS users(
-  user_id SERIAL PRIMARY KEY, 
-  first_name VARCHAR(50), 
-  last_name VARCHAR(50), 
-  email VARCHAR(355) UNIQUE NOT NULL, 
+  user_id SERIAL PRIMARY KEY,
+  first_name VARCHAR(50),
+  last_name VARCHAR(50),
+  email VARCHAR(355) UNIQUE NOT NULL,
   password VARCHAR(100),
   security_question VARCHAR(100),
   security_answer VARCHAR(100),
   status VARCHAR(100),
   created_on TIMESTAMP DEFAULT NOW()
 );
-  
+
 CREATE TABLE IF NOT EXISTS role(
  role_id SERIAL PRIMARY KEY,
  role_name VARCHAR (255) UNIQUE NOT NULL
@@ -28,3 +28,7 @@ CREATE TABLE IF NOT EXISTS user_role
       REFERENCES users (user_id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION
 );
+
+INSERT INTO role(role_name) VALUES('ADMIN');
+INSERT INTO role(role_name) VALUES('PROFESSOR');
+INSERT INTO role(role_name) VALUES('STUDENT');
