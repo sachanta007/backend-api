@@ -16,9 +16,12 @@ class Service:
 				password = Crypto.encrypted_string(user['password'])
 
 				register_query = "INSERT INTO users(first_name,last_name, email, password, \
-				security_question, security_answer, status) VALUES (%s, %s, %s, %s,%s,%s, %s)"
+				security_question, security_answer, status) VALUES (%s, %s, %s, %s,%s,%s, %s) RETURNING user_id"
 				cur.execute(register_query, (user['firstName'], user['lastName'], \
 					user['email'], password, user['securityQuestion'], user['securityAnswer'], 'deactive'));
+				user_id = cur.fetchone()[0]
+				add_role_query = "INSERT INTO user_role(user_id, role_id) VALUES (%s, %s)"
+				cur.execute(add_role_query, (user_id, user['role'],))
 				conn.commit()
 
 				email = Email(to=user['email'], subject='Welcome to Course 360')
