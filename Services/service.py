@@ -17,16 +17,17 @@ class Service:
 				password = Crypto.encrypted_string(user['password'])
 
 				register_query = "INSERT INTO users(first_name,last_name, email, password, \
-				security_question, security_answer, status) VALUES (%s, %s, %s, %s,%s,%s, %s)"
+				security_question, security_answer, status) VALUES (%s, %s, %s, %s,%s,%s, %s) RETURNING user_id"
 				cur.execute(register_query, (user['firstName'], user['lastName'], \
 					user['email'], password, user['securityQuestion'], user['securityAnswer'], 'deactive'));
+				user_id = cur.fetchone()[0]
+				add_role_query = "INSERT INTO user_role(user_id, role_id) VALUES (%s, %s)"
+				cur.execute(add_role_query, (user_id, user['role'],))
 
-				#Commenting email part as it was throwing BotoServerError (timezone issue)
-				# email = Email(to=user['email'], subject='Welcome to Course 360')
-				#
-				# ctx = {'username': user['firstName'], 'url':'http://localhost:5000/activate/'+user['email']}
-				# email.html('confirmRegistration.html', ctx)
-				# email.send()
+				email = Email(to=user['email'], subject='Welcome to Course 360')
+				ctx = {'username': user['firstName'], 'url':'http://localhost:5000/activate/'+user['email']}
+				email.html('confirmRegistration.html', ctx)
+				email.send()
 
 				conn.commit()
 				return True
