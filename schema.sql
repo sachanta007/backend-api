@@ -1,15 +1,15 @@
 CREATE TABLE IF NOT EXISTS users(
-  user_id SERIAL PRIMARY KEY, 
-  first_name VARCHAR(50), 
-  last_name VARCHAR(50), 
-  email VARCHAR(355) UNIQUE NOT NULL, 
+  user_id SERIAL PRIMARY KEY,
+  first_name VARCHAR(50),
+  last_name VARCHAR(50),
+  email VARCHAR(355) UNIQUE NOT NULL,
   password VARCHAR(100),
   security_question VARCHAR(100),
   security_answer VARCHAR(100),
   status VARCHAR(100),
   created_on TIMESTAMP DEFAULT NOW()
 );
-  
+
 CREATE TABLE IF NOT EXISTS role(
  role_id SERIAL PRIMARY KEY,
  role_name VARCHAR (255) UNIQUE NOT NULL
@@ -27,4 +27,19 @@ CREATE TABLE IF NOT EXISTS user_role
   CONSTRAINT user_role_user_id_fkey FOREIGN KEY (user_id)
       REFERENCES users (user_id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+ALTER TABLE users
+ADD otp VARCHAR(10);
+
+CREATE TABLE IF NOT EXISTS courses(
+  course_id SERIAL PRIMARY KEY,
+  course_name VARCHAR(50),
+  description VARCHAR(500),
+  prof_id VARCHAR(50),
+  location VARCHAR(100),
+  start_time VARCHAR(50),
+  end_time VARCHAR(50),
+  days INTEGER,
+  department VARCHAR(50)
 );

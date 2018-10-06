@@ -6,6 +6,67 @@ from Services.jwt import Jwt
 class Service:
 
 	@staticmethod
+	def auth_token(token):
+		return Jwt.decode_auth_token(token)
+
+	@staticmethod
+	def insert_courses(courses):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				insert_query = "INSERT INTO courses(course_id, course_name, description, prof_id, location,\
+				start_time, end_time, days, department) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+				cur.execute(insert_query, (courses['course_id'], courses['course_name'], courses['description'], \
+				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
+				courses['days'], courses['department'], ));
+
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+				print(e)
+				return  e
+
+
+	@staticmethod
+	def update_password(data):
+		cur = None
+		conn = None
+		try:
+			conn = PgConfig.db()
+			if (conn):
+				cur = conn.cursor()
+				check_otp = "SELECT users.otp AS otp \
+				FROM users WHERE users.email LIKE %s"
+				cur.execute(check_otp , (data['email'],))
+				otp = cur.fetchone()[0]
+
+				if(otp):
+					if (pas == otp):
+						update_password = "UPDATE  users SET users.password = %s where users.email LIKE %s"
+						cur.execute(update_password, (data['password'],data['email'], ));
+						conn.commit()
+						conn.close()
+						return True
+					else:
+						return "Invalid OTP"
+			else:
+					return " Something went wrong"
+		except Exception as e:
+			print(e)
+			return {"Error occured": e}
+
+
+
+
+	@staticmethod
 	def register(app, user):
 		cur = None
 		conn = None
@@ -47,7 +108,6 @@ class Service:
 
 				update_query = "UPDATE users SET status = %s WHERE users.email LIKE %s"
 				cur.execute(update_query, ('activate', email));
-
 				conn.commit()
 				return True
 			else:
