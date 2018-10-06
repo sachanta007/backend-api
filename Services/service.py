@@ -2,6 +2,7 @@ from Services.pg_config import PgConfig
 from Services.email_config import Email
 from Services.crypto import Crypto
 from Services.jwt import Jwt
+from random import randint
 
 class Service:
 
@@ -111,6 +112,12 @@ class Service:
 				cur.close()
 				conn.close()
 
+	@staticmethod
+	def generate_random_number(n):
+	    range_start = 10**(n-1)
+	    range_end = (10**n)-1
+	    return randint(range_start, range_end)
+
 	"""
 	Checks whether answer input by user is same as that in DB
 	for his/her email
@@ -135,6 +142,42 @@ class Service:
 				else:
 					return False
 		except Exception as e:
+			return e
+		finally:
+				cur.close()
+				conn.close()
+
+	@staticmethod
+	def send_otp(email, answer):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				select_query = "SELECT users.security_answer, users.first_name FROM users WHERE users.email LIKE %s"
+				cur.execute(select_query, (email,))
+				result = cur.fetchone()
+				security_answer = result[0]
+				if(security_answer):
+					if(answer == security_answer):
+						otp = Service.generate_random_number(6)
+						update_query = "UPDATE users SET otp = %s WHERE users.email LIKE %s"
+						cur.execute(update_query, (otp,email,))
+						conn.commit()
+						email = Email(to=email, subject='Welcome to Course 360')
+						ctx = {'username': result[0], 'otp': otp}
+						email.html('otp.html', ctx)
+						email.send()
+						return True
+					else:
+						return "Wrong answer"
+				else:
+					return "Invalid request"
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			print(e)
 			return e
 		finally:
 				cur.close()
