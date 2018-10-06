@@ -1,7 +1,7 @@
 from flask import Flask,g,request,json,render_template,jsonify
 from Services.service import Service
 from flask_cors import CORS,cross_origin
-
+import jsonpickle
 app = Flask(__name__, static_url_path='/static') #in order to access any images
 app.config.from_object(__name__)
 
@@ -15,14 +15,13 @@ cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 @app.route("/login", methods=['POST'])
 @cross_origin()
 def check():
-
 	data = request.json
 	try:
-		response = Service.login(data['email'], data['password'])
+		response = Service.login(data)
 		if (response):
-			return jsonify(response), 200
+			return jsonpickle.encode(response, unpicklable=False), 200
 		else:
-			return jsonify({'Error': response}), 500
+			return jsonify({'Error': "Something Went Wrong"}), 500
 	except Exception as e:
 		return jsonify(e), 500
 

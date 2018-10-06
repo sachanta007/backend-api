@@ -2,6 +2,8 @@ from Services.pg_config import PgConfig
 from Services.email_config import Email
 from Services.crypto import Crypto
 from Services.jwt import Jwt
+from Models.User import User
+
 from random import randint
 
 class Service:
@@ -58,7 +60,7 @@ class Service:
 				conn.close()
 
 	@staticmethod
-	def login(email, password):
+	def login(data):
 		try:
 			conn = PgConfig.db()
 			if(conn):
@@ -66,12 +68,18 @@ class Service:
 				cur = conn.cursor()
 				login_query = "SELECT users.password, users.user_id AS password \
 				FROM users WHERE users.email LIKE %s"
-				cur.execute(login_query, (email, ))
+				cur.execute(login_query, (data['email'], ))
 				user = cur.fetchone()
-				response = {'token':'', 'email':''}
-				if(Crypto.verify_decrypted_string(password, user[0])):
-					response['token'] = str(Jwt.encode_auth_token(user_id=user[1]))
-					response['email']= email
+				response = User()
+				if(Crypto.verify_decrypted_string(data['password'], user[0])):
+					response.token = str(Jwt.encode_auth_token(user_id=user[1]))
+					response.email= data['email']
+
+					get_role_query = "SELECT user_role.role_id FROM user_role WHERE user_role.user_id = %s"
+					cur.execute(get_role_query, (user[1],))
+					response.role_id = cur.fetchone()[0]
+					cur.close()
+					conn.close()
 					return response
 					#status = Jwt.decode_auth_token(token)
 				else:
@@ -80,12 +88,7 @@ class Service:
 				return "Invalid Email or Password"
 
 		except Exception as e:
-			print(e)
-			return {"Error occured": e}
-
-		finally:
-				cur.close()
-				conn.close()
+			raise e
 
 	@staticmethod
 	def security_question(email):
