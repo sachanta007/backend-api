@@ -3,10 +3,11 @@ from flask import Flask,g,request,json,render_template
 from datetime import datetime
 class Jwt:
 	@staticmethod
-	def encode_auth_token(user_id):
+	def encode_auth_token(user_id, role_id):
 	    try:
 	        payload = {
-	            'sub': user_id
+	            'sub': user_id,
+				'role': str(role_id)
 	        }
 	        return jwt.encode(
 	            payload,
@@ -19,10 +20,10 @@ class Jwt:
 
 	@staticmethod
 	def decode_auth_token(auth_token):
-	    try:
-	        payload = jwt.decode(auth_token, 'Course-360')
-	        return payload['sub']
-	    except jwt.ExpiredSignatureError:
-	        return 'Signature expired. Please log in again.'
-	    except jwt.InvalidTokenError:
-	        return 'Invalid token. Please log in again.'
+		try:
+			payload = jwt.decode(auth_token, 'Course-360')
+			return payload
+		except jwt.ExpiredSignatureError:
+			return False
+		except jwt.InvalidTokenError:
+			return False

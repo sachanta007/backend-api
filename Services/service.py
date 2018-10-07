@@ -72,16 +72,15 @@ class Service:
 				user = cur.fetchone()
 				response = User()
 				if(Crypto.verify_decrypted_string(data['password'], user[0])):
-					response.token = str(Jwt.encode_auth_token(user_id=user[1]))
 					response.email= data['email']
 
 					get_role_query = "SELECT user_role.role_id FROM user_role WHERE user_role.user_id = %s"
 					cur.execute(get_role_query, (user[1],))
 					response.role_id = cur.fetchone()[0]
+					response.token = (Jwt.encode_auth_token(user_id=user[1], role_id=response.role_id)).decode()
 					cur.close()
 					conn.close()
 					return response
-					#status = Jwt.decode_auth_token(token)
 				else:
 					return "Not able to login"
 			else:
@@ -208,3 +207,33 @@ class Service:
 		finally:
 			cur.close()
 			conn.close()
+
+	@staticmethod
+	def get_all_students(start, end):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT users.first_name, users.last_name, users.email FROM users,\
+				(SELECT user_id FROM user_role WHERE role_id = %s) AS user_role \
+				WHERE users.user_id = user_role.user_id LIMIT %s OFFSET %s"
+				cur.execute(query, (3, end, start,))
+				users = cur.fetchall()
+				user_list = []
+				if(len(users)):
+					for response in users:
+						user = User()
+						user.first_name = response[0]
+						user.last_name = response[1]
+						user.email = response[2]
+						user_list.append(user)
+				else:
+					return False
+
+				cur.close()
+				conn.close()
+				return user_list
+		except Exception as e:
+			return e

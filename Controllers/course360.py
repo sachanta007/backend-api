@@ -2,6 +2,8 @@ from flask import Flask,g,request,json,render_template,jsonify
 from Services.service import Service
 from flask_cors import CORS,cross_origin
 import jsonpickle
+from Services.jwt import Jwt
+
 app = Flask(__name__, static_url_path='/static') #in order to access any images
 app.config.from_object(__name__)
 
@@ -12,6 +14,7 @@ cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 # app = Flask(__name__)
 # app.config.from_object(__name__)
+
 @app.route("/login", methods=['POST'])
 @cross_origin()
 def check():
@@ -101,6 +104,26 @@ def update_password():
 		data = request.json
 		response = Service.update_password(data['password'],data['email'])
 		return jsonify({'wasUpdateSuccessful': response}), 200
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/getAllStudents/start/<start>/end/<end>')
+@cross_origin()
+def get_all_students(start, end):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			if(status['role'] == str(1)):
+				response = Service.get_all_students(start, end)
+				if(response):
+					return jsonpickle.encode(response, unpicklable=False), 200
+				else:
+					return jsonify({"Error": "Something went wrong"}), 500
+			else:
+				return jsonify({"Error": "Unauthorised"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
 	except Exception as e:
 		return jsonify(e), 500
 
