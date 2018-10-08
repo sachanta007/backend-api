@@ -9,6 +9,35 @@ from random import randint
 class Service:
 
 	@staticmethod
+	def auth_token(token):
+		return Jwt.decode_auth_token(token)
+
+	@staticmethod
+	def insert_courses(courses):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				insert_query = "INSERT INTO courses(course_name, description, prof_id, location,\
+				start_time, end_time, days, department) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+
+				cur.execute(insert_query, (courses['course_name'], courses['description'], \
+				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
+				courses['days'], courses['department'], ));
+
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+				return  e
+
+
+	@staticmethod
 	def register(app, user):
 		cur = None
 		conn = None

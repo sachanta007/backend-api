@@ -32,3 +32,15 @@ CREATE TABLE IF NOT EXISTS user_role
 INSERT INTO role(role_name) VALUES('ADMIN');
 INSERT INTO role(role_name) VALUES('PROFESSOR');
 INSERT INTO role(role_name) VALUES('STUDENT');
+
+CREATE TABLE IF NOT EXISTS courses(
+  course_id SERIAL PRIMARY KEY,
+  course_name VARCHAR(50),
+  description VARCHAR(500),
+  prof_id VARCHAR(50),
+  location VARCHAR(100),
+  start_time VARCHAR(50),
+  end_time VARCHAR(50),
+  days INTEGER,
+  department VARCHAR(50)
+);

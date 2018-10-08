@@ -14,6 +14,23 @@ cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 # app = Flask(__name__)
 # app.config.from_object(__name__)
+@app.route("/insertCourses", methods=['POST'])
+def insert_courses():
+	data = request.json
+	try:
+		token = request.headers.get('Authorization')
+		if(Service.auth_token(token)):
+			if(data['role_id'] == str(1)):
+				response = Service.insert_courses(data)
+				if( response == True):
+					return jsonify({'data': data}), 200
+				else:
+					return jsonify({'Error':'Something went wrong'}), 500
+			else:
+				return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 
 @app.route("/login", methods=['POST'])
 @cross_origin()
