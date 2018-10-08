@@ -9,6 +9,50 @@ from random import randint
 class Service:
 
 	@staticmethod
+	def delete_courses(courses):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				delete_query = "DELETE FROM courses WHERE  courses.course_id = %s"
+				cur.execute(delete_query,courses['course_id'],);
+
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return  e
+
+
+	@staticmethod
+	def update_courses(courses):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				update_query = "UPDATE courses SET course_name = %s, description = %s, prof_id = %s, location = %s,\
+				start_time = %s, end_time = %s, days = %s, department = %s WHERE  courses.course_id = %s"
+				cur.execute(update_query, (courses['course_name'], courses['description'], \
+				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
+				courses['days'], courses['department'], courses['course_id'],));
+
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return  e
+
+	@staticmethod
 	def auth_token(token):
 		return Jwt.decode_auth_token(token)
 
