@@ -9,6 +9,27 @@ from random import randint
 class Service:
 
 	@staticmethod
+	def delete_courses(courses):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				delete_query = "DELETE FROM courses WHERE  courses.course_id = %s"
+				cur.execute(delete_query,courses['course_id'],);
+
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return  e
+
+
+	@staticmethod
 	def update_courses(courses):
 		conn = None
 		cur = None
