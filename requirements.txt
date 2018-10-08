@@ -1,0 +1,9 @@
+flask
+psycopg2-binary
+psycopg2
+pyjwt
+boto
+jinja2
+passlib
+flask-cors
+jsonpickle
