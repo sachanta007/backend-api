@@ -169,7 +169,27 @@ def get_all_students(start, end):
 		status = Jwt.decode_auth_token(auth_header)
 		if(status):
 			if(status['role'] == str(1)):
-				response = Service.get_all_students(start, end)
+				response = Service.get_all("STUDENTS", start, end)
+				if(response):
+					return jsonpickle.encode(response, unpicklable=False), 200
+				else:
+					return jsonify({"Error": "Something went wrong"}), 500
+			else:
+				return jsonify({"Error": "Unauthorised"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/getAllProfessors/start/<start>/end/<end>')
+@cross_origin()
+def get_all_professors(start, end):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			if(status['role'] == str(1)):
+				response = Service.get_all("PROFESSORS", start, end)
 				if(response):
 					return jsonpickle.encode(response, unpicklable=False), 200
 				else:

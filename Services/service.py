@@ -282,9 +282,12 @@ class Service:
 			conn.close()
 
 	@staticmethod
-	def get_all_students(start, end):
+	def get_all(users, start, end):
 		conn = None
 		cur = None
+		role_id = 3 #default to students
+		if(users=="PROFESSORS"):
+			role_id = 2
 		try:
 			conn = PgConfig.db()
 			if(conn):
@@ -292,7 +295,7 @@ class Service:
 				query = "SELECT users.first_name, users.last_name, users.email FROM users,\
 				(SELECT user_id FROM user_role WHERE role_id = %s) AS user_role \
 				WHERE users.user_id = user_role.user_id LIMIT %s OFFSET %s"
-				cur.execute(query, (3, end, start,))
+				cur.execute(query, (role_id, end, start,))
 				users = cur.fetchall()
 				user_list = []
 				if(len(users)):
