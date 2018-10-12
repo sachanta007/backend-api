@@ -3,6 +3,7 @@ from Services.email_config import Email
 from Services.crypto import Crypto
 from Services.jwt import Jwt
 from Models.User import User
+from Models.Course import Course
 
 from random import randint
 
@@ -311,5 +312,63 @@ class Service:
 				cur.close()
 				conn.close()
 				return user_list
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def get_user_by(id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT users.first_name, users.last_name, users.email FROM users WHERE users.user_id = %s"
+				cur.execute(query, (id,))
+				obj = cur.fetchone()
+				user =User()
+				if(obj):
+					user.first_name = obj[0]
+					user.last_name = obj[1]
+					user.email = obj[2]
+				else:
+					return False
+				cur.close()
+				conn.close()
+				return user
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def get_course_by(name, start, end):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department\
+				FROM courses WHERE course_name ILIKE %(like)s ESCAPE '=' LIMIT %(end)s OFFSET %(end)s"
+				cur.execute(query, (dict(like= name+'%',end= end, start= start)))
+				courses = cur.fetchall()
+				courses_list = []
+				if(len(courses)):
+					for obj in courses:
+						course = Course()
+						course.course_id=obj[0]
+						course.course_name=obj[1]
+						course.description=obj[2]
+						course.location = obj[4]
+						course.start_time = obj[5]
+						course.end_time = obj[6]
+						course.days = obj[7]
+						course.department = obj[8]
+						course.professor = Service.get_user_by(obj[3])
+						courses_list.append(course)
+				else:
+					return []
+				cur.close()
+				conn.close()
+				return courses_list
 		except Exception as e:
 			return e
