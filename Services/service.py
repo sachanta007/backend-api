@@ -295,7 +295,7 @@ class Service:
 				cur = conn.cursor()
 				query = "SELECT users.first_name, users.last_name, users.email FROM users,\
 				(SELECT user_id FROM user_role WHERE role_id = %s) AS user_role \
-				WHERE users.user_id = user_role.user_id LIMIT %s OFFSET %s"
+				WHERE users.user_id = user_role.user_id ORDER BY users.user_id LIMIT %s OFFSET %s"
 				cur.execute(query, (role_id, end, start,))
 				users = cur.fetchall()
 				user_list = []
@@ -348,7 +348,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department\
-				FROM courses WHERE course_name ILIKE %(like)s ESCAPE '=' LIMIT %(end)s OFFSET %(end)s"
+				FROM courses WHERE course_name ILIKE %(like)s ESCAPE '=' ORDER BY course_name LIMIT %(end)s OFFSET %(end)s"
 				cur.execute(query, (dict(like= name+'%',end= end, start= start)))
 				courses = cur.fetchall()
 				courses_list = []
@@ -364,6 +364,37 @@ class Service:
 						course.days = obj[7]
 						course.department = obj[8]
 						course.professor = Service.get_user_by(obj[3])
+						courses_list.append(course)
+				else:
+					return []
+				cur.close()
+				conn.close()
+				return courses_list
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def get_professor_schedule(id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT course_name, start_time, end_time, location, course_id,\
+				prof_id from courses where prof_id = %s"
+				cur.execute(query, (id,))
+				schedules = cur.fetchall()
+				courses_list = []
+				if(len(schedules)):
+					for schedule in schedules:
+						course = Course()
+						course.course_name = schedule[0]
+						course.start_time = schedule[1]
+						course.end_time = schedule[2]
+						course.location = schedule[3]
+						course.course_id = schedule[4]
+						course.prof_id = schedule[5]
 						courses_list.append(course)
 				else:
 					return []
