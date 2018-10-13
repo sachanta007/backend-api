@@ -106,14 +106,13 @@ class Service:
 				email.send()
 
 				conn.commit()
+				cur.close()
+				conn.close()
 				return True
 			else:
 				return "Unable to connect"
 		except Exception as e:
 			return e
-		finally:
-				cur.close()
-				conn.close()
 
 	@staticmethod
 	def activate_user(email):

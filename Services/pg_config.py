@@ -4,8 +4,7 @@ class PgConfig:
 	@staticmethod
 	def db():
 		try:
-			conn = psycopg2.connect("dbname='Course-360' user='postgres' host='localhost' password='1234'")
+			conn = psycopg2.connect("dbname='brevwdnu' user='brevwdnu' host='elmer.db.elephantsql.com' password='fHFLQnWQe4e5OB3Bfx1oIxkPLtwl1Gev'")
 			return conn
 		except:
 			return False
-		
