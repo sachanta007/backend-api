@@ -24,7 +24,6 @@ def get_all_courses(start, end):
 		if(status):
 			if(status['role'] == str(1)):
 				response = Service.get_all_courses(start, end)
-				print(response)
 				if(response):
 					return jsonpickle.encode(response, unpicklable=False), 200
 				else:
@@ -36,7 +35,7 @@ def get_all_courses(start, end):
 	except Exception as e:
 		return jsonify(e), 500
 
-		
+
 @app.route("/deleteCourses", methods=['POST'])
 def delete_courses():
 	data = request.json

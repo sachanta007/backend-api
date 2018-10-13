@@ -30,7 +30,7 @@ class Service:
 						course.course_id = response[0]
 						course.course_name = response[1]
 						course.description = response[2]
-						course.prof_id = response[3]
+						course.professor = Service.get_user_by(response[3])
 						course.location = response[4]
 						course.start_time = response[5]
 						course.end_time = response[6]
