@@ -44,3 +44,5 @@ CREATE TABLE IF NOT EXISTS courses(
   days INTEGER,
   department VARCHAR(50)
 );
+
+ALTER TABLE users ADD COLUMN otp VARCHAR(20);

@@ -7,3 +7,4 @@ jinja2
 passlib
 flask-cors
 jsonpickle
+uwsgi
