@@ -9,6 +9,44 @@ from random import randint
 
 class Service:
 
+
+	@staticmethod
+	def get_all_courses(start, end):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT courses.course_id,courses.course_name, courses.description, \
+				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
+				courses.days, courses.department FROM courses ORDER BY courses.course_name ASC LIMIT %s OFFSET %s"
+				cur.execute(query, (end, start,))
+				courses = cur.fetchall()
+				course_list = []
+				if(len(courses)):
+					for response in courses:
+						course = Course()
+						course.course_id = response[0]
+						course.course_name = response[1]
+						course.description = response[2]
+						course.prof_id = response[3]
+						course.location = response[4]
+						course.start_time = response[5]
+						course.end_time = response[6]
+						course.days = response[7]
+						course.department = response[8]
+						course_list.append(course)
+				else:
+					return []
+
+				cur.close()
+				conn.close()
+				return course_list
+		except Exception as e:
+			return e
+
+
 	@staticmethod
 	def delete_courses(courses):
 		conn = None
