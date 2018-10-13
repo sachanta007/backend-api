@@ -330,7 +330,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT users.first_name, users.last_name, users.email FROM users,\
+				query = "SELECT users.first_name, users.last_name, users.email, users.user_id FROM users,\
 				(SELECT user_id FROM user_role WHERE role_id = %s) AS user_role \
 				WHERE users.user_id = user_role.user_id ORDER BY users.user_id LIMIT %s OFFSET %s"
 				cur.execute(query, (role_id, end, start,))
@@ -342,6 +342,7 @@ class Service:
 						user.first_name = response[0]
 						user.last_name = response[1]
 						user.email = response[2]
+						user.user_id = response[3]
 						user_list.append(user)
 				else:
 					return False
