@@ -369,6 +369,7 @@ class Service:
 					user.first_name = obj[0]
 					user.last_name = obj[1]
 					user.email = obj[2]
+					user.user_id = id
 				else:
 					return False
 				cur.close()
