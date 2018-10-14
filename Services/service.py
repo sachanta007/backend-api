@@ -387,8 +387,8 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department\
-				FROM courses WHERE course_name ILIKE %(like)s ESCAPE '=' ORDER BY course_name LIMIT %(end)s OFFSET %(end)s"
-				cur.execute(query, (dict(like= name+'%',end= end, start= start)))
+				FROM courses WHERE course_name ILIKE %s ORDER BY course_name LIMIT %s OFFSET %s"
+				cur.execute(query, (name+'%', end, start,))
 				courses = cur.fetchall()
 				courses_list = []
 				if(len(courses)):
