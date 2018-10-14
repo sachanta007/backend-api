@@ -56,7 +56,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				delete_query = "DELETE FROM courses WHERE  courses.course_id = %s"
-				cur.execute(delete_query,courses['course_id'],);
+				cur.execute(delete_query,courses['course_id'],)
 
 				conn.commit()
 				cur.close()
