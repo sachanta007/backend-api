@@ -139,7 +139,7 @@ class Service:
 				cur.execute(add_role_query, (user_id, user['role'],))
 
 				email = Email(to=user['email'], subject='Welcome to Course 360')
-				ctx = {'username': user['firstName'], 'url':'http://localhost:5000/activate/'+user['email']}
+				ctx = {'username': user['firstName'], 'url':'http://course360.herokuapp.com/activate/'+user['email']}
 				email.html('confirmRegistration.html', ctx)
 				email.send()
 
