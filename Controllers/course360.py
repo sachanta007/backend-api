@@ -1,4 +1,4 @@
-from flask import Flask,g,request,json,render_template,jsonify
+from flask import Flask,g,request,json,render_template,jsonify, redirect
 from Services.service import Service
 from flask_cors import CORS,cross_origin
 import jsonpickle
@@ -130,7 +130,8 @@ def activate_user(email):
 	try:
 		response = Service.activate_user(email)
 		if(response == True):
-			return jsonify({'data': 'Your account is activated'}), 200
+			return redirect("http://course360.herokuapp.com/activated", code=200)
+			#jsonify({'data': 'Your account is activated'}), 200
 		else:
 			return jsonify({'Error': "response"}), 500
 	except Exception as e:
