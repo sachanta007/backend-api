@@ -466,3 +466,41 @@ class Service:
 				return "Unable to connect"
 		except Exception as e:
 				return  e
+
+	@staticmethod
+	def get_cart(id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT courses.course_id,courses.course_name, courses.description, \
+				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
+				courses.days, courses.department, courses.course_code FROM courses WHERE \
+				course_id IN (SELECT course_id FROM cart where user_id = %s)"
+				cur.execute(query, (id,))
+				courses = cur.fetchall()
+				course_list = []
+				if(len(courses)):
+					for response in courses:
+						course = Course()
+						course.course_id = response[0]
+						course.course_name = response[1]
+						course.description = response[2]
+						course.professor = Service.get_user_by(response[3])
+						course.location = response[4]
+						course.start_time = response[5]
+						course.end_time = response[6]
+						course.days = response[7]
+						course.department = response[8]
+						course.course_code = response[9]
+						course.user_id = id
+						course_list.append(course)
+				else:
+					return []
+				cur.close()
+				conn.close()
+				return course_list
+		except Exception as e:
+			return e

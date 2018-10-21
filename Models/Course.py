@@ -10,3 +10,4 @@ class Course:
         self.days = None
         self.department = None
         self.course_code = None
+        self.user_id = None

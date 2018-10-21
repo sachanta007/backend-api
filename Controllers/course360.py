@@ -280,6 +280,23 @@ def add_to_cart():
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route('/getCart/userId/<id>')
+@cross_origin()
+def get_cart(id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_cart(id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 
 
 if __name__ == '__main__':
