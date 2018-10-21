@@ -20,7 +20,7 @@ class Service:
 				cur = conn.cursor()
 				query = "SELECT courses.course_id,courses.course_name, courses.description, \
 				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
-				courses.days, courses.department FROM courses ORDER BY courses.course_name ASC LIMIT %s OFFSET %s"
+				courses.days, courses.department, courses.course_code FROM courses ORDER BY courses.course_name ASC LIMIT %s OFFSET %s"
 				cur.execute(query, (end, start,))
 				courses = cur.fetchall()
 				course_list = []
@@ -36,6 +36,7 @@ class Service:
 						course.end_time = response[6]
 						course.days = response[7]
 						course.department = response[8]
+						course.course_code = response[9]
 						course_list.append(course)
 				else:
 					return []
@@ -77,10 +78,10 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				update_query = "UPDATE courses SET course_name = %s, description = %s, prof_id = %s, location = %s,\
-				start_time = %s, end_time = %s, days = %s, department = %s WHERE  courses.course_id = %s"
+				start_time = %s, end_time = %s, days = %s, department = %s, course_code= %s WHERE  courses.course_id = %s"
 				cur.execute(update_query, (courses['course_name'], courses['description'], \
 				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
-				courses['days'], courses['department'], courses['course_id'],));
+				courses['days'], courses['department'], courses['course_code'], courses['course_id'], ));
 
 				conn.commit()
 				cur.close()
@@ -104,11 +105,11 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				insert_query = "INSERT INTO courses(course_name, description, prof_id, location,\
-				start_time, end_time, days, department) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+				start_time, end_time, days, department, course_code) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
 				cur.execute(insert_query, (courses['course_name'], courses['description'], \
 				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
-				courses['days'], courses['department'], ));
+				courses['days'], courses['department'], courses['course_code'], ));
 
 				conn.commit()
 				cur.close()
@@ -386,8 +387,8 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department\
-				FROM courses WHERE course_name ILIKE %s ORDER BY course_name LIMIT %s OFFSET %s"
+				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
+				course_code FROM courses WHERE course_name ILIKE %s ORDER BY course_name LIMIT %s OFFSET %s"
 				cur.execute(query, (name+'%', end, start,))
 				courses = cur.fetchall()
 				courses_list = []
@@ -403,12 +404,16 @@ class Service:
 						course.days = obj[7]
 						course.department = obj[8]
 						course.professor = Service.get_user_by(obj[3])
+						course.course_code = obj[9]
 						courses_list.append(course)
+					cur.close()
+					conn.close()
+					return courses_list
 				else:
+					cur.close()
+					conn.close()
 					return []
-				cur.close()
-				conn.close()
-				return courses_list
+
 		except Exception as e:
 			return e
 

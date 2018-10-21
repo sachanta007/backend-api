@@ -9,3 +9,4 @@ class Course:
         self.end_time = None
         self.days = None
         self.department = None
+        self.course_code = None
