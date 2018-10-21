@@ -504,3 +504,22 @@ class Service:
 				return course_list
 		except Exception as e:
 			return e
+
+	@staticmethod
+	def delete_from_cart(course_id, user_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				delete_query = "DELETE FROM cart WHERE cart.course_id = %s AND cart.user_id = %s"
+				cur.execute(delete_query, (course_id, user_id,));
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return  e

@@ -297,6 +297,23 @@ def get_cart(id):
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route('/delete/course/<course>/fromCart/for/user/<user>')
+@cross_origin()
+def delete_from_cart(course, user):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.delete_from_cart(course, user)
+			if(response):
+				return jsonify({"response": "Success"}), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 
 
 if __name__ == '__main__':
