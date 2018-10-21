@@ -264,6 +264,23 @@ def get_schedule(id):
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route("/addToCart", methods=['POST'])
+def add_to_cart():
+	data = request.json
+	try:
+		token = request.headers.get('Authorization')
+		if(Service.auth_token(token)):
+			response = Service.add_to_cart(data)
+			if( response == True):
+				return jsonify({'data': data}), 200
+			else:
+				return jsonify({'Error':'Something went wrong'}), 500
+		else:
+			return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+
 
 if __name__ == '__main__':
     #app.debug = True

@@ -447,3 +447,22 @@ class Service:
 				return courses_list
 		except Exception as e:
 			return e
+
+	@staticmethod
+	def add_to_cart(course):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				insert_query = "INSERT INTO cart(user_id, course_id) VALUES (%s, %s)"
+				cur.execute(insert_query, (course['user_id'], course['course_id'],));
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+				return  e
