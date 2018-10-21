@@ -314,7 +314,21 @@ def delete_from_cart(course, user):
 	except Exception as e:
 		return jsonify(e), 500
 
-
+@app.route("/commentOnACourse", methods=['POST'])
+def save_comment():
+	data = request.json
+	try:
+		token = request.headers.get('Authorization')
+		if(Service.auth_token(token)):
+			response = Service.save_comment(data)
+			if( response == True):
+				return jsonify({'data': data}), 200
+			else:
+				return jsonify({'Error':'Something went wrong'}), 500
+		else:
+			return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
 
 if __name__ == '__main__':
     #app.debug = True

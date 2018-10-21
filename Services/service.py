@@ -523,3 +523,22 @@ class Service:
 				return "Unable to connect"
 		except Exception as e:
 			return  e
+
+	@staticmethod
+	def save_comment(data):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				insert_query = "INSERT INTO course_comments(user_id, course_id, comment, course_ratings) VALUES (%s, %s, %s, %s)"
+				cur.execute(insert_query, (data['user_id'], data['course_id'], data['comment'],data['ratings'],));
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+				return  e

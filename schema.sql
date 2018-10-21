@@ -55,3 +55,10 @@ CREATE TABLE IF NOT EXISTS cart(
   course_id INTEGER,
   user_id INTEGER
 );
+CREATE TABLE IF NOT EXISTS course_comments(
+  comment_id SERIAL PRIMARY KEY,
+  course_id INTEGER,
+  user_id INTEGER,
+  comment VARCHAR(100),
+  course_ratings INTEGER
+);
