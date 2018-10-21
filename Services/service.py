@@ -37,6 +37,7 @@ class Service:
 						course.days = response[7]
 						course.department = response[8]
 						course.course_code = response[9]
+						course.comment = Service.get_comment_by(response[0])
 						course_list.append(course)
 				else:
 					return []
@@ -46,7 +47,6 @@ class Service:
 				return course_list
 		except Exception as e:
 			return e
-
 
 	@staticmethod
 	def delete_courses(courses):
@@ -404,6 +404,7 @@ class Service:
 						course.days = obj[7]
 						course.department = obj[8]
 						course.professor = Service.get_user_by(obj[3])
+						course.comment = Service.get_comment_by(obj[0])
 						course.course_code = obj[9]
 						courses_list.append(course)
 					cur.close()
@@ -542,3 +543,40 @@ class Service:
 				return "Unable to connect"
 		except Exception as e:
 				return  e
+
+	@staticmethod
+	def get_comment_by(course_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT comment, user_id, course_ratings FROM course_comments WHERE course_id = %s"
+				cur.execute(query, (course_id, ))
+				comments = cur.fetchall()
+				comment_list =[]
+				for comment in comments:
+					user = User()
+					query = "SELECT first_name, last_name, email, user_id FROM users WHERE user_id = %s"
+					cur.execute(query, (comment[1], ))
+					response = cur.fetchone()
+					user = User()
+					user.first_name = response[0]
+					user.last_name = response[1]
+					user.email = response[2]
+					user.user_id = response[3]
+					user.comment= comment[0]
+					user.rating = comment[2]
+					comment_list.append(user)
+
+				cur.close()
+				conn.close()
+				return comment_list
+			else:
+				cur.close()
+				conn.close()
+				return []
+
+		except Exception as e:
+			return e

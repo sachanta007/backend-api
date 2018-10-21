@@ -11,3 +11,4 @@ class Course:
         self.department = None
         self.course_code = None
         self.user_id = None
+        self.comment = None

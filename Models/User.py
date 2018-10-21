@@ -10,3 +10,5 @@ class User:
         self.otp = None
         self.role_id = None
         self.token = None
+        self.comment = None
+        self.rating = None
