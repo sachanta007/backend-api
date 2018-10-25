@@ -172,20 +172,45 @@ class Service:
 				conn.close()
 
 	@staticmethod
+	def authenticate(data):
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				login_query = "SELECT users.password, users.user_id, users.first_name AS password \
+				FROM users WHERE users.email LIKE %s"
+				cur.execute(login_query, (data['email'], ))
+				user = cur.fetchone()
+				if(Crypto.verify_decrypted_string(data['password'], user[0])):
+					otp = Service.generate_random_number(6)
+					update_query = "UPDATE users SET otp = %s WHERE users.email LIKE %s"
+					cur.execute(update_query, (otp,data['email'],))
+					conn.commit()
+					email = Email(to=data['email'], subject='Login OTP')
+					ctx = {'username': user[2], 'otp': otp, 'purpose':'This OTP is generated to login to the application'}
+					email.html('otp.html', ctx)
+					email.send()
+					return True
+				else:
+					return "Invalid Email or Password"
+			else:
+				return "Not able to connect"
+		except Exception as e:
+			raise e
+
+	@staticmethod
 	def login(data):
 		try:
 			conn = PgConfig.db()
 			if(conn):
-
 				cur = conn.cursor()
-				login_query = "SELECT users.password, users.user_id AS password \
+				login_query = "SELECT users.otp, users.user_id AS password \
 				FROM users WHERE users.email LIKE %s"
 				cur.execute(login_query, (data['email'], ))
 				user = cur.fetchone()
 				response = User()
-				if(Crypto.verify_decrypted_string(data['password'], user[0])):
+				if(user[0]==data['otp']):
 					response.email= data['email']
-
 					get_role_query = "SELECT user_role.role_id FROM user_role WHERE user_role.user_id = %s"
 					cur.execute(get_role_query, (user[1],))
 					response.role_id = cur.fetchone()[0]
@@ -194,10 +219,9 @@ class Service:
 					conn.close()
 					return response
 				else:
-					return "Not able to login"
+					return "Incorrect OTP"
 			else:
-				return "Invalid Email or Password"
-
+				return "Unable to connect"
 		except Exception as e:
 			raise e
 
@@ -280,7 +304,7 @@ class Service:
 						cur.execute(update_query, (otp,email,))
 						conn.commit()
 						email = Email(to=email, subject='Welcome to Course 360')
-						ctx = {'username': result[0], 'otp': otp}
+						ctx = {'username': result[1], 'otp': otp, 'purpose':"This OTP is generated to change your account's password"}
 						email.html('otp.html', ctx)
 						email.send()
 						return True

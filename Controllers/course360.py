@@ -96,6 +96,18 @@ def insert_courses():
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route("/authenticate", methods=['POST'])
+@cross_origin()
+def authenticate():
+	data = request.json
+	try:
+		response = Service.authenticate(data)
+		if (response==True):
+			return jsonpickle.encode(response, unpicklable=False), 200
+		else:
+			return jsonify({'Error': "Something Went Wrong"}), 500
+	except Exception as e:
+		return jsonify(e), 500
 
 @app.route("/login", methods=['POST'])
 @cross_origin()
