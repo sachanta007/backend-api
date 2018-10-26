@@ -196,6 +196,7 @@ class Service:
 			else:
 				return "Not able to connect"
 		except Exception as e:
+			print(e)
 			raise e
 
 	@staticmethod
