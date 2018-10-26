@@ -181,8 +181,6 @@ class Service:
 				FROM users WHERE users.email LIKE %s"
 				cur.execute(login_query, (data['email'], ))
 				user = cur.fetchone()
-				print(data['password'])
-				print(user)
 				if(Crypto.verify_decrypted_string(data['password'], user[0])):
 					otp = Service.generate_random_number(6)
 					update_query = "UPDATE users SET otp = %s WHERE users.email LIKE %s"
@@ -198,7 +196,6 @@ class Service:
 			else:
 				return "Not able to connect"
 		except Exception as e:
-			print(e)
 			raise e
 
 	@staticmethod
