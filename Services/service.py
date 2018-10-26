@@ -211,6 +211,7 @@ class Service:
 				response = User()
 				if(user[0]==data['otp']):
 					response.email= data['email']
+					response.user_id = user[1]
 					get_role_query = "SELECT user_role.role_id FROM user_role WHERE user_role.user_id = %s"
 					cur.execute(get_role_query, (user[1],))
 					response.role_id = cur.fetchone()[0]
