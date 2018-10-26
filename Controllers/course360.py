@@ -1,4 +1,4 @@
-from flask import Flask,g,request,json,render_template,jsonify
+from flask import Flask,g,request,json,render_template,jsonify, redirect
 from Services.service import Service
 from flask_cors import CORS,cross_origin
 import jsonpickle
@@ -96,6 +96,18 @@ def insert_courses():
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route("/authenticate", methods=['POST'])
+@cross_origin()
+def authenticate():
+	data = request.json
+	try:
+		response = Service.authenticate(data)
+		if (response==True):
+			return jsonpickle.encode(response, unpicklable=False), 200
+		else:
+			return jsonify({'Error': "Something Went Wrong"}), 500
+	except Exception as e:
+		return jsonify(e), 500
 
 @app.route("/login", methods=['POST'])
 @cross_origin()
@@ -130,7 +142,8 @@ def activate_user(email):
 	try:
 		response = Service.activate_user(email)
 		if(response == True):
-			return jsonify({'data': 'Your account is activated'}), 200
+			return redirect("http://course360.herokuapp.com/activated", code=200)
+			#jsonify({'data': 'Your account is activated'}), 200
 		else:
 			return jsonify({'Error': "response"}), 500
 	except Exception as e:
@@ -263,6 +276,71 @@ def get_schedule(id):
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route("/addToCart", methods=['POST'])
+def add_to_cart():
+	data = request.json
+	try:
+		token = request.headers.get('Authorization')
+		if(Service.auth_token(token)):
+			response = Service.add_to_cart(data)
+			if( response == True):
+				return jsonify({'data': data}), 200
+			else:
+				return jsonify({'Error':'Something went wrong'}), 500
+		else:
+			return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/getCart/userId/<id>')
+@cross_origin()
+def get_cart(id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_cart(id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/delete/course/<course>/fromCart/for/user/<user>')
+@cross_origin()
+def delete_from_cart(course, user):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.delete_from_cart(course, user)
+			if(response):
+				return jsonify({"response": "Success"}), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route("/commentOnACourse", methods=['POST'])
+def save_comment():
+	data = request.json
+	try:
+		token = request.headers.get('Authorization')
+		if(Service.auth_token(token)):
+			response = Service.save_comment(data)
+			if( response == True):
+				return jsonify({'data': data}), 200
+			else:
+				return jsonify({'Error':'Something went wrong'}), 500
+		else:
+			return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
 
 if __name__ == '__main__':
     #app.debug = True

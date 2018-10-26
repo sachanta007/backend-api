@@ -46,3 +46,19 @@ CREATE TABLE IF NOT EXISTS courses(
 );
 
 ALTER TABLE users ADD COLUMN otp VARCHAR(20);
+
+ALTER TABLE courses
+ALTER COLUMN days TYPE INTEGER[] USING ARRAY[days]::INTEGER[]
+ALTER TABLE courses ADD COLUMN course_code VARCHAR(40);
+CREATE TABLE IF NOT EXISTS cart(
+  cart_id SERIAL PRIMARY KEY,
+  course_id INTEGER,
+  user_id INTEGER
+);
+CREATE TABLE IF NOT EXISTS course_comments(
+  comment_id SERIAL PRIMARY KEY,
+  course_id INTEGER,
+  user_id INTEGER,
+  comment VARCHAR(100),
+  course_ratings INTEGER
+);
