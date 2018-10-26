@@ -580,3 +580,39 @@ class Service:
 
 		except Exception as e:
 			return e
+
+	@staticmethod
+	def get_course_by(course_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
+				course_code FROM courses WHERE course_id = %s"
+				cur.execute(query, (course_id,))
+				obj = cur.fetchone()
+				if(obj):
+					course = Course()
+					course.course_id=obj[0]
+					course.course_name=obj[1]
+					course.description=obj[2]
+					course.location = obj[4]
+					course.start_time = obj[5]
+					course.end_time = obj[6]
+					course.days = obj[7]
+					course.department = obj[8]
+					course.professor = Service.get_user_by(obj[3])
+					course.comment = Service.get_comment_by(obj[0])
+					course.course_code = obj[9]
+					cur.close()
+					conn.close()
+					return course
+				else:
+					cur.close()
+					conn.close()
+					return []
+
+		except Exception as e:
+			return e
