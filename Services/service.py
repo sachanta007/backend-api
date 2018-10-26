@@ -185,7 +185,7 @@ class Service:
 				response = User()
 				if(Crypto.verify_decrypted_string(data['password'], user[0])):
 					response.email= data['email']
-
+					response.user_id = user[1]
 					get_role_query = "SELECT user_role.role_id FROM user_role WHERE user_role.user_id = %s"
 					cur.execute(get_role_query, (user[1],))
 					response.role_id = cur.fetchone()[0]
