@@ -202,7 +202,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				login_query = "SELECT users.otp, users.user_id AS password \
+				login_query = "SELECT users.otp, users.user_id, users.first_name, users.last_name\
 				FROM users WHERE users.email LIKE %s"
 				cur.execute(login_query, (data['email'], ))
 				user = cur.fetchone()
@@ -210,6 +210,8 @@ class Service:
 				if(user[0]==data['otp']):
 					response.email= data['email']
 					response.user_id = user[1]
+					response.first_name = user[2]
+					response.last_name = user[3]
 					get_role_query = "SELECT user_role.role_id FROM user_role WHERE user_role.user_id = %s"
 					cur.execute(get_role_query, (user[1],))
 					response.role_id = cur.fetchone()[0]
@@ -468,7 +470,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_name, start_time, end_time, location, course_id,\
-				prof_id, days FROM courses WHERE prof_id = %s"
+				prof_id, days, course_code, department, description FROM courses WHERE prof_id = %s"
 				cur.execute(query, (id,))
 				schedules = cur.fetchall()
 				courses_list = []
@@ -482,7 +484,12 @@ class Service:
 						course.course_id = schedule[4]
 						course.prof_id = schedule[5]
 						course.days = schedule[6]
+						course.course_code = schedule[7]
+						course.comment = Service.get_comment_by(schedule[4])
+						course.professor = Service.get_user_by(schedule[5])
 						course.start_dates =Service.get_start_dates(schedule[6])
+						course.department = schedule[8]
+						course.description = schedule[9]
 						courses_list.append(course)
 						cur.close()
 						conn.close()
