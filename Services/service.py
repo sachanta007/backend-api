@@ -11,14 +11,14 @@ import datetime
 class Service:
 
 	@staticmethod
-	def delete_enrolled_course(user_id,course_id):
+	def delete_enrolled_course(user_id, course_id):
 		conn = None
 		cur = None
 		try:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				delete_query = "DELETE FROM enrolled_courses WHERE enrolled_courses.user_id LIKE %s \
+				delete_query = "DELETE FROM enrolled_courses WHERE enrolled_courses.user_id = %s \
 				and enrolled_courses.course_id = %s"
 				cur.execute(delete_query, (user_id,course_id,))
 

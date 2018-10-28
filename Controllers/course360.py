@@ -14,15 +14,38 @@ cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 # app = Flask(__name__)
 # app.config.from_object(__name__)
-@app.route('/enrollCourses',methods=['POST'])
-def enroll_courses():
+
+@app.route('/dropCourse/courseId/<course_id>/userId/<user_id>',methods=['GET'])
+def drop_course(course_id, user_id):
+	auth_header = request.headers.get('Authorization')
 	data = request.json
 	try:
-		response = Service.enroll_courses(data)
-		if(response):
-			return jsonpickle.encode(response, unpicklable=False), 200
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.delete_enrolled_course(user_id, course_id)
+			if(response):
+				return  jsonify({'Success':"Dropped the course"}), 200
+			else:
+				return jsonify({'Error':"Something went wrong"}), 500
 		else:
-			return jsonify({'Error':"Something went wrong"}), 500
+			return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/enrollCourses',methods=['POST'])
+def enroll_courses():
+	auth_header = request.headers.get('Authorization')
+	data = request.json
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.enroll_courses(data)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({'Error':"Something went wrong"}), 500
+		else:
+			return jsonify({"Error": "Invalid token"}), 500
 	except Exception as e:
 		return jsonify(e), 500
 
