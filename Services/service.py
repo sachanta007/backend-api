@@ -13,6 +13,26 @@ class Service:
 <<<<<<< HEAD
 =======
 	@staticmethod
+	def delete_enrolled_course(user_id,course_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				delete_query = "DELETE FROM enrolled_courses WHERE enrolled_courses.user_id LIKE %s \
+				and enrolled_courses.course_id = %s"
+				cur.execute(delete_query, (user_id,course_id,))
+
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return  e
+	@staticmethod
 	def validate_courses(course1, course2):
 		conn = None
 		cur = None

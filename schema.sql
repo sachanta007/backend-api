@@ -63,3 +63,9 @@ CREATE TABLE IF NOT EXISTS course_comments(
   comment VARCHAR(100),
   course_ratings INTEGER
 );
+CREATE TABLE IF NOT EXISTS enrolled_courses(
+  user_id SERIAL PRIMARY KEY,
+  course_id INTEGER,
+  course_name VARCHAR(20),
+  payment VARCHAR(100) DEFAULT False
+);

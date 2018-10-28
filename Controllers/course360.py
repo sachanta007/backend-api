@@ -14,6 +14,23 @@ cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 # app = Flask(__name__)
 # app.config.from_object(__name__)
+@cross_origin()
+@app.route('/deleteEnrolledCourses' , methods = ['POST'])
+def delete_enrolled_course(user,course):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.delete_enrolled_course(user,course)
+			if(response):
+				return jsonify({"response": "Success"}), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 @app.route('/enrollCourses',methods=['POST'])
 def enroll_courses():
 	data = request
