@@ -4,7 +4,7 @@ from Services.crypto import Crypto
 from Services.jwt import Jwt
 from Models.User import User
 from Models.Course import Course
-
+from Models.Payment import Payment
 from random import randint
 import datetime
 
@@ -30,6 +30,7 @@ class Service:
 				return "Unable to connect"
 		except Exception as e:
 			return  e
+
 	@staticmethod
 	def validate_courses(course1, course2):
 		conn = None
@@ -66,35 +67,39 @@ class Service:
 
 
 	@staticmethod
-	def enroll_courses(user_id):
+	def enroll_courses(data):
 		conn = None
 		cur = None
+		user_id = data['user_id']
 		try:
 			conn = PgConfig.db()
 			if(conn):
-
+				payment = Payment()
 				cur = conn.cursor()
-				query = "SELECT cart.course_id from cart WHERE user_id = %s)"
+				query = "SELECT cart.course_id from cart WHERE user_id = %s"
 				cur.execute(query,(user_id,))
 				courses = cur.fetchall()
 				course_status=[]
 				for i in range(0, len(courses)):
-					 for j in range(i+1, len(courses)):
+					 for j in range(i, len(courses)):
 						 course_status.append(Service.validate_courses(courses[i][0], courses[j][0]))
 
+				payment = Payment()
 				if(False in course_status):
 					return False
 				else:
-					fa = Service.generate_random_number(4)
-					cost = 1300 * len(courses)
-					update_query = "UPDATE users SET fa = %s WHERE users.user_id LIKE %s"
-					cur.execute(update_query, (fa,user_id,))
-					conn.commit()
-					print("Validation successful. Please proceed to pay")
-					print("Financial aid:" +fa)
-					print(" Please pay $" +cost)
-
-					return True,fa,cost
+					payment.cost = 1300 * len(courses)
+					finanical_aid_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
+					cur.execute(finanical_aid_query, (user_id,))
+					obj = cur.fetchone()
+					if(obj[0]):
+						payment.finanical_aid = obj[0]
+					else:
+						payment.finanical_aid = Service.generate_random_number(3)
+						update_query = "UPDATE users SET finanical_aid = %s WHERE users.user_id = %s"
+						cur.execute(update_query, (payment.finanical_aid,user_id,))
+						conn.commit()
+					return payment
 
 		except Exception as e:
 			return e
