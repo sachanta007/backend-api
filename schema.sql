@@ -64,10 +64,13 @@ CREATE TABLE IF NOT EXISTS course_comments(
   course_ratings INTEGER
 );
 CREATE TABLE IF NOT EXISTS enrolled_courses(
-  user_id SERIAL PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER,
   course_id INTEGER,
   course_name VARCHAR(20),
   payment VARCHAR(100) DEFAULT False
 );
 
 ALTER TABLE users ADD COLUMN finanical_aid VARCHAR(10);
+
+ALTER TABLE cart ADD COLUMN enrolled BOOLEAN DEFAULT FALSE;

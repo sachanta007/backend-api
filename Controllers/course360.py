@@ -153,8 +153,8 @@ def activate_user(email):
 	try:
 		response = Service.activate_user(email)
 		if(response == True):
-			return redirect("http://course360.herokuapp.com/activated", code=200)
-			#jsonify({'data': 'Your account is activated'}), 200
+			#return redirect("http://course360.herokuapp.com/activated", code=200)
+			return jsonify({'data': 'Your account is activated'}), 200
 		else:
 			return jsonify({'Error': "response"}), 500
 	except Exception as e:
@@ -350,6 +350,23 @@ def save_comment():
 				return jsonify({'Error':'Something went wrong'}), 500
 		else:
 			return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/getCourseBy/course/<course_id>')
+@cross_origin()
+def get_course_by(course_id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_course_by_id(course_id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
 	except Exception as e:
 		return jsonify(e), 500
 
