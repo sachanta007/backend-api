@@ -531,7 +531,7 @@ class Service:
 				query = "SELECT courses.course_id,courses.course_name, courses.description, \
 				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
 				courses.days, courses.department, courses.course_code FROM courses WHERE \
-				course_id IN (SELECT course_id FROM cart where user_id = %s)"
+				course_id IN (SELECT course_id FROM cart WHERE user_id = %s AND enrolled = 'false')"
 				cur.execute(query, (id,))
 				courses = cur.fetchall()
 				course_list = []

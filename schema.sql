@@ -62,3 +62,5 @@ CREATE TABLE IF NOT EXISTS course_comments(
   comment VARCHAR(100),
   course_ratings INTEGER
 );
+
+ALTER TABLE cart ADD COLUMN enrolled BOOLEAN DEFAULT FALSE;
