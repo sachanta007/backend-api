@@ -6,9 +6,9 @@ from Models.User import User
 from Models.Course import Course
 
 from random import randint
+import datetime
 
 class Service:
-
 
 	@staticmethod
 	def get_all_courses(start, end):
@@ -68,7 +68,6 @@ class Service:
 		except Exception as e:
 			return  e
 
-
 	@staticmethod
 	def update_courses(courses):
 		conn = None
@@ -119,7 +118,6 @@ class Service:
 				return "Unable to connect"
 		except Exception as e:
 				return  e
-
 
 	@staticmethod
 	def register(app, user):
@@ -443,6 +441,24 @@ class Service:
 		except Exception as e:
 			return e
 
+	# Used from https://stackoverflow.com/questions/6558535/find-the-date-for-the-first-monday-after-a-given-a-date
+	@staticmethod
+	def next_weekday(d, weekday):
+	    days_ahead = weekday - d.weekday()
+	    if(days_ahead <= 0):
+	        days_ahead += 7
+	    return d + datetime.timedelta(days_ahead)
+
+	@staticmethod
+	def get_start_dates(days_occur):
+		d = datetime.date(2018, 8, 19)
+		next_monday = Service.next_weekday(d, 0)
+		start_dates =[]
+		for day in days_occur:
+			weekday_date = next_monday + datetime.timedelta(days=(day-1))
+			start_dates.append(str(weekday_date))
+		return start_dates
+
 	@staticmethod
 	def get_professor_schedule(id):
 		conn = None
@@ -452,7 +468,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_name, start_time, end_time, location, course_id,\
-				prof_id, days from courses where prof_id = %s"
+				prof_id, days FROM courses WHERE prof_id = %s"
 				cur.execute(query, (id,))
 				schedules = cur.fetchall()
 				courses_list = []
@@ -465,14 +481,16 @@ class Service:
 						course.location = schedule[3]
 						course.course_id = schedule[4]
 						course.prof_id = schedule[5]
-						#course.days = schedule[6]
-						#course.start_dates =Service.get_start_dates(course.days)
+						course.days = schedule[6]
+						course.start_dates =Service.get_start_dates(schedule[6])
 						courses_list.append(course)
+						cur.close()
+						conn.close()
+					return courses_list
 				else:
+					cur.close()
+					conn.close()
 					return []
-				cur.close()
-				conn.close()
-				return courses_list
 		except Exception as e:
 			return e
 
