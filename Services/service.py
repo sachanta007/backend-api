@@ -220,9 +220,9 @@ class Service:
 					conn.close()
 					return response
 				else:
-					return "Incorrect OTP"
+					return False
 			else:
-				return "Unable to connect"
+				return False
 		except Exception as e:
 			raise e
 
@@ -452,7 +452,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_name, start_time, end_time, location, course_id,\
-				prof_id from courses where prof_id = %s"
+				prof_id, days from courses where prof_id = %s"
 				cur.execute(query, (id,))
 				schedules = cur.fetchall()
 				courses_list = []
@@ -465,6 +465,8 @@ class Service:
 						course.location = schedule[3]
 						course.course_id = schedule[4]
 						course.prof_id = schedule[5]
+						#course.days = schedule[6]
+						#course.start_dates =Service.get_start_dates(course.days)
 						courses_list.append(course)
 				else:
 					return []
