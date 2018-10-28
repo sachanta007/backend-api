@@ -8,6 +8,7 @@ from Models.Course import Course
 from random import randint
 
 class Service:
+
 	@staticmethod
 	def validate_courses(course1, course2):
 		conn = None
@@ -39,6 +40,9 @@ class Service:
 				else:
 					return True
 
+			except Exception as e:
+				return e
+
 
 	@staticmethod
 	def enroll_courses(user_id):
@@ -55,11 +59,25 @@ class Service:
 				 for i in range(0, len(courses)):
 					 for j in range(i+1, len(courses)):
 						 course_status.append(Service.validate_courses(courses[i][0], courses[j][0]))
-						 
+
 				if(False in course_status):
 					return False
 				else:
+					otp = Service.generate_random_number(4)
+					update_query = "UPDATE users SET otp = %s WHERE users.user_id LIKE %s"
+					cur.execute(update_query, (otp,user_id,))
+					conn.commit()
+					get_query = "SELECT finanical_aid from users WHERE users.user_id LIKE %s"
+					cur.execute(get_query,(user_id,))
+					aid = cur.fetchall()
+					print("Validation successful. Please proceed to pay")
+					print("Financial aid:" +aid)
+					print(" Please pay $" +1300*len(courses))
+
 					return True
+
+		except Exception as e:
+			return e
 
 	@staticmethod
 	def get_all_courses(start, end):
