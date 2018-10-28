@@ -14,34 +14,26 @@ class Service:
 		cur = None
 		try:
 			conn = PgConfig.db()
-			query1 = "SELECT courses.days from courses WHERE courses.course_id = %s"
+			query1 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
 			cur.execute(query1,(course1,))
-			course1_days = cur.fetchall()
-			query2 = "SELECT courses.days from courses WHERE courses.course_id = %s"
+			course1_days = cur.fetchone()
+			query2 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
 			cur.execute(query2,(course2,))
-			course1_days = cur.fetchall()
+			course2_days = cur.fetchone()
 
-			if course1_days != course2_days2
+			if(course1_days != course2_days2):
 				return True
 			else:
 
-				query3 = "SELECT courses.start_time from courses WHERE courses.course_id = %s"
-				cur.execute(query,(course1,))
-				course1_start_time = cur.fetchall()
-				query4 = "SELECT courses.start_time from courses WHERE courses.course_id = %s"
-				cur.execute(query,(course2,))
-				course2_start_time = cur.fetchall()
-				query5 = "SELECT courses.end_time from courses WHERE courses.course_id = %s"
-				cur.execute(query,(course1,))
-				course1_end_time = cur.fetchall()
-				query6 = "SELECT courses.end_time from courses WHERE courses.course_id = %s"
-				cur.execute(query,(course2,))
-				course2_end_time = cur.fetchall()
+				course1_start_time = course1_days[1]
+				course2_start_time = course2_days[1]
+				course1_end_time = course1_days[2]
+				course2_end_time = course2_days[2]
 
-				if course1_start_time = course2_start_time :
+				if(course1_start_time = course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return False
-				elif course2_start_time < course1_end_time:
+				elif(course2_start_time < course1_end_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return False
 				else:
@@ -59,9 +51,15 @@ class Service:
 				query = "SELECT cart.course_id from cart WHERE user_id = %s)"
 				 cur.execute(query,(user_id,))
 				 courses = cur.fetchall()
-
-
-
+				 course_status=[]
+				 for i in range(0, len(courses)):
+					 for j in range(i+1, len(courses)):
+						 course_status.append(Service.validate_courses(courses[i][0], courses[j][0]))
+						 
+				if(False in course_status):
+					return False
+				else:
+					return True
 
 	@staticmethod
 	def get_all_courses(start, end):
@@ -120,7 +118,6 @@ class Service:
 				return "Unable to connect"
 		except Exception as e:
 			return  e
-
 
 	@staticmethod
 	def update_courses(courses):
