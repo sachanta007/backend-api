@@ -44,7 +44,7 @@ class Service:
 			cur.execute(query2,(course2,))
 			course2_days = cur.fetchone()
 
-			if(course1_days != course2_days2):
+			if(course1_days[0] != course2_days2[0]):
 				return True
 			else:
 
