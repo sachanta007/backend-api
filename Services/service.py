@@ -6,9 +6,30 @@ from Models.User import User
 from Models.Course import Course
 
 from random import randint
+import datetime
 
 class Service:
 
+	@staticmethod
+	def delete_enrolled_course(user_id,course_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				delete_query = "DELETE FROM enrolled_courses WHERE enrolled_courses.user_id LIKE %s \
+				and enrolled_courses.course_id = %s"
+				cur.execute(delete_query, (user_id,course_id,))
+
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return  e
 	@staticmethod
 	def validate_courses(course1, course2):
 		conn = None
@@ -31,16 +52,16 @@ class Service:
 				course1_end_time = course1_days[2]
 				course2_end_time = course2_days[2]
 
-				if(course1_start_time = course2_start_time):
+				if(course1_start_time == course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return False
-				elif(course2_start_time < course1_end_time):
+				elif(course2_start_time <= course1_end_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return False
 				else:
 					return True
 
-			except Exception as e:
+		except Exception as e:
 				return e
 
 
@@ -51,33 +72,33 @@ class Service:
 		try:
 			conn = PgConfig.db()
 			if(conn):
+
 				cur = conn.cursor()
 				query = "SELECT cart.course_id from cart WHERE user_id = %s)"
-				 cur.execute(query,(user_id,))
-				 courses = cur.fetchall()
-				 course_status=[]
-				 for i in range(0, len(courses)):
+				cur.execute(query,(user_id,))
+				courses = cur.fetchall()
+				course_status=[]
+				for i in range(0, len(courses)):
 					 for j in range(i+1, len(courses)):
 						 course_status.append(Service.validate_courses(courses[i][0], courses[j][0]))
 
 				if(False in course_status):
 					return False
 				else:
-					otp = Service.generate_random_number(4)
-					update_query = "UPDATE users SET otp = %s WHERE users.user_id LIKE %s"
-					cur.execute(update_query, (otp,user_id,))
+					fa = Service.generate_random_number(4)
+					cost = 1300 * len(courses)
+					update_query = "UPDATE users SET fa = %s WHERE users.user_id LIKE %s"
+					cur.execute(update_query, (fa,user_id,))
 					conn.commit()
-					get_query = "SELECT finanical_aid from users WHERE users.user_id LIKE %s"
-					cur.execute(get_query,(user_id,))
-					aid = cur.fetchall()
 					print("Validation successful. Please proceed to pay")
-					print("Financial aid:" +aid)
-					print(" Please pay $" +1300*len(courses))
+					print("Financial aid:" +fa)
+					print(" Please pay $" +cost)
 
-					return True
+					return True,fa,cost
 
 		except Exception as e:
 			return e
+
 
 	@staticmethod
 	def get_all_courses(start, end):
@@ -188,7 +209,6 @@ class Service:
 		except Exception as e:
 				return  e
 
-
 	@staticmethod
 	def register(app, user):
 		cur = None
@@ -288,9 +308,9 @@ class Service:
 					conn.close()
 					return response
 				else:
-					return "Incorrect OTP"
+					return False
 			else:
-				return "Unable to connect"
+				return False
 		except Exception as e:
 			raise e
 
@@ -511,6 +531,24 @@ class Service:
 		except Exception as e:
 			return e
 
+	# Used from https://stackoverflow.com/questions/6558535/find-the-date-for-the-first-monday-after-a-given-a-date
+	@staticmethod
+	def next_weekday(d, weekday):
+	    days_ahead = weekday - d.weekday()
+	    if(days_ahead <= 0):
+	        days_ahead += 7
+	    return d + datetime.timedelta(days_ahead)
+
+	@staticmethod
+	def get_start_dates(days_occur):
+		d = datetime.date(2018, 8, 19)
+		next_monday = Service.next_weekday(d, 0)
+		start_dates =[]
+		for day in days_occur:
+			weekday_date = next_monday + datetime.timedelta(days=(day-1))
+			start_dates.append(str(weekday_date))
+		return start_dates
+
 	@staticmethod
 	def get_professor_schedule(id):
 		conn = None
@@ -520,7 +558,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_name, start_time, end_time, location, course_id,\
-				prof_id from courses where prof_id = %s"
+				prof_id, days FROM courses WHERE prof_id = %s"
 				cur.execute(query, (id,))
 				schedules = cur.fetchall()
 				courses_list = []
@@ -533,12 +571,16 @@ class Service:
 						course.location = schedule[3]
 						course.course_id = schedule[4]
 						course.prof_id = schedule[5]
+						course.days = schedule[6]
+						course.start_dates =Service.get_start_dates(schedule[6])
 						courses_list.append(course)
+						cur.close()
+						conn.close()
+					return courses_list
 				else:
+					cur.close()
+					conn.close()
 					return []
-				cur.close()
-				conn.close()
-				return courses_list
 		except Exception as e:
 			return e
 
@@ -670,6 +712,42 @@ class Service:
 				cur.close()
 				conn.close()
 				return []
+
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def get_course_by_id(course_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
+				course_code FROM courses WHERE course_id = %s"
+				cur.execute(query, (course_id,))
+				obj = cur.fetchone()
+				if(obj):
+					course = Course()
+					course.course_id=obj[0]
+					course.course_name=obj[1]
+					course.description=obj[2]
+					course.location = obj[4]
+					course.start_time = obj[5]
+					course.end_time = obj[6]
+					course.days = obj[7]
+					course.department = obj[8]
+					course.professor = Service.get_user_by(obj[3])
+					course.comment = Service.get_comment_by(obj[0])
+					course.course_code = obj[9]
+					cur.close()
+					conn.close()
+					return course
+				else:
+					cur.close()
+					conn.close()
+					return []
 
 		except Exception as e:
 			return e

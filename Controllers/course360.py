@@ -16,10 +16,9 @@ cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 # app.config.from_object(__name__)
 @app.route('/enrollCourses',methods=['POST'])
 def enroll_courses():
-	data = request
+	data = request.json
 	try:
-		data = request.json
-		response = Service.enroll_courses(app, data)
+		response = Service.enroll_courses(data)
 
 		if(response == True):
 			return jsonify({'data': data}), 200
