@@ -19,11 +19,10 @@ def enroll_courses():
 	data = request.json
 	try:
 		response = Service.enroll_courses(data)
-
-		if(response == True):
-			return jsonify({'data': data}), 200
+		if(response):
+			return jsonpickle.encode(response, unpicklable=False), 200
 		else:
-			return jsonify({'Error':response}), 500
+			return jsonify({'Error':"Something went wrong"}), 500
 	except Exception as e:
 		return jsonify(e), 500
 
