@@ -14,6 +14,19 @@ cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 # app = Flask(__name__)
 # app.config.from_object(__name__)
+@app.route('/enrollCourses',methods=['POST'])
+def enroll_courses():
+	data = request
+	try:
+		data = request.json
+		response = Service.enroll_courses(app, data)
+
+		if(response == True):
+			return jsonify({'data': data}), 200
+		else:
+			return jsonify({'Error':response}), 500
+	except Exception as e:
+		return jsonify(e), 500
 
 @app.route('/getAllCourses/start/<start>/end/<end>')
 @cross_origin()

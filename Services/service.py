@@ -10,6 +10,79 @@ import datetime
 
 class Service:
 
+<<<<<<< HEAD
+=======
+	@staticmethod
+	def validate_courses(course1, course2):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			query1 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
+			cur.execute(query1,(course1,))
+			course1_days = cur.fetchone()
+			query2 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
+			cur.execute(query2,(course2,))
+			course2_days = cur.fetchone()
+
+			if(course1_days != course2_days2):
+				return True
+			else:
+
+				course1_start_time = course1_days[1]
+				course2_start_time = course2_days[1]
+				course1_end_time = course1_days[2]
+				course2_end_time = course2_days[2]
+
+				if(course1_start_time = course2_start_time):
+					print("Timings of the selected courses clash, please select some other course")
+					return False
+				elif(course2_start_time < course1_end_time):
+					print("Timings of the selected courses clash, please select some other course")
+					return False
+				else:
+					return True
+
+			except Exception as e:
+				return e
+
+
+	@staticmethod
+	def enroll_courses(user_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT cart.course_id from cart WHERE user_id = %s)"
+				 cur.execute(query,(user_id,))
+				 courses = cur.fetchall()
+				 course_status=[]
+				 for i in range(0, len(courses)):
+					 for j in range(i+1, len(courses)):
+						 course_status.append(Service.validate_courses(courses[i][0], courses[j][0]))
+
+				if(False in course_status):
+					return False
+				else:
+					otp = Service.generate_random_number(4)
+					update_query = "UPDATE users SET otp = %s WHERE users.user_id LIKE %s"
+					cur.execute(update_query, (otp,user_id,))
+					conn.commit()
+					get_query = "SELECT finanical_aid from users WHERE users.user_id LIKE %s"
+					cur.execute(get_query,(user_id,))
+					aid = cur.fetchall()
+					print("Validation successful. Please proceed to pay")
+					print("Financial aid:" +aid)
+					print(" Please pay $" +1300*len(courses))
+
+					return True
+
+		except Exception as e:
+			return e
+
+>>>>>>> SICECR2-52
 	@staticmethod
 	def get_all_courses(start, end):
 		conn = None
