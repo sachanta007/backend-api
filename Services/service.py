@@ -607,7 +607,7 @@ class Service:
 			return e
 
 	@staticmethod
-	def get_course_by(course_id):
+	def get_course_by_id(course_id):
 		conn = None
 		cur = None
 		try:

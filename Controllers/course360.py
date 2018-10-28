@@ -349,7 +349,7 @@ def get_course_by(course_id):
 	try:
 		status = Jwt.decode_auth_token(auth_header)
 		if(status):
-			response = Service.get_course_by(course_id)
+			response = Service.get_course_by_id(course_id)
 			if(response):
 				return jsonpickle.encode(response, unpicklable=False), 200
 			else:
