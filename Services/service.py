@@ -8,6 +8,59 @@ from Models.Course import Course
 from random import randint
 
 class Service:
+	@staticmethod
+	def validate_courses(course1, course2):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			query1 = "SELECT courses.days from courses WHERE courses.course_id = %s"
+			cur.execute(query1,(course1,))
+			course1_days = cur.fetchall()
+			query2 = "SELECT courses.days from courses WHERE courses.course_id = %s"
+			cur.execute(query2,(course2,))
+			course1_days = cur.fetchall()
+
+			if course1_days != course2_days2
+				return True
+			else:
+
+				query3 = "SELECT courses.start_time from courses WHERE courses.course_id = %s"
+				cur.execute(query,(course1,))
+				course1_start_time = cur.fetchall()
+				query4 = "SELECT courses.start_time from courses WHERE courses.course_id = %s"
+				cur.execute(query,(course2,))
+				course2_start_time = cur.fetchall()
+				query5 = "SELECT courses.end_time from courses WHERE courses.course_id = %s"
+				cur.execute(query,(course1,))
+				course1_end_time = cur.fetchall()
+				query6 = "SELECT courses.end_time from courses WHERE courses.course_id = %s"
+				cur.execute(query,(course2,))
+				course2_end_time = cur.fetchall()
+
+				if course1_start_time = course2_start_time :
+					print("Timings of the selected courses clash, please select some other course")
+					return False
+				elif course2_start_time < course1_end_time:
+					print("Timings of the selected courses clash, please select some other course")
+					return False
+				else:
+					return True
+
+
+	@staticmethod
+	def enroll_courses(user_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT cart.course_id from cart WHERE user_id = %s)"
+				 cur.execute(query,(user_id,))
+				 courses = cur.fetchall()
+
+
 
 
 	@staticmethod
