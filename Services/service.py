@@ -37,17 +37,16 @@ class Service:
 		cur = None
 		try:
 			conn = PgConfig.db()
+			cur = conn.cursor()
 			query1 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
 			cur.execute(query1,(course1,))
 			course1_days = cur.fetchone()
 			query2 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
 			cur.execute(query2,(course2,))
 			course2_days = cur.fetchone()
-
-			if(course1_days[0] != course2_days2[0]):
+			if(course1_days[0] != course2_days[0]):
 				return True
 			else:
-
 				course1_start_time = course1_days[1]
 				course2_start_time = course2_days[1]
 				course1_end_time = course1_days[2]
@@ -65,7 +64,6 @@ class Service:
 		except Exception as e:
 				return e
 
-
 	@staticmethod
 	def enroll_courses(data):
 		conn = None
@@ -80,8 +78,8 @@ class Service:
 				cur.execute(query,(user_id,))
 				courses = cur.fetchall()
 				course_status=[]
-				for i in range(0, len(courses)):
-					 for j in range(i, len(courses)):
+				for i in range(0, len(courses)-1):
+					 for j in range(i+1, len(courses)):
 						 course_status.append(Service.validate_courses(courses[i][0], courses[j][0]))
 
 				payment = Payment()
@@ -100,10 +98,8 @@ class Service:
 						cur.execute(update_query, (payment.finanical_aid,user_id,))
 						conn.commit()
 					return payment
-
 		except Exception as e:
 			return e
-
 
 	@staticmethod
 	def get_all_courses(start, end):
