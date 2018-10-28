@@ -783,6 +783,7 @@ class Service:
 					course.professor = Service.get_user_by(obj[3])
 					course.comment = Service.get_comment_by(obj[0])
 					course.course_code = obj[9]
+					course.start_dates =Service.get_start_dates(obj[7])
 					cur.close()
 					conn.close()
 					return course
