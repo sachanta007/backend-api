@@ -11,6 +11,31 @@ import datetime
 class Service:
 
 	@staticmethod
+	def get_enrolled_courses(user_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				select_query = "SELECT course_id FROM enrolled_courses WHERE enrolled_courses.user_id = %s"
+				cur.execute(select_query, (user_id,))
+				response = cur.fetchall()
+				courses_list=[]
+				if(len(response)):
+					for course in response:
+						courses_list.append(Service.get_course_by_id(course[0]))
+					cur.close()
+					conn.close()
+					return courses_list
+				else:
+					return False
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return  e
+
+	@staticmethod
 	def delete_enrolled_course(user_id, course_id):
 		conn = None
 		cur = None
