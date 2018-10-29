@@ -11,14 +11,39 @@ import datetime
 class Service:
 
 	@staticmethod
-	def delete_enrolled_course(user_id,course_id):
+	def get_enrolled_courses(user_id):
 		conn = None
 		cur = None
 		try:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				delete_query = "DELETE FROM enrolled_courses WHERE enrolled_courses.user_id LIKE %s \
+				select_query = "SELECT course_id FROM enrolled_courses WHERE enrolled_courses.user_id = %s"
+				cur.execute(select_query, (user_id,))
+				response = cur.fetchall()
+				courses_list=[]
+				if(len(response)):
+					for course in response:
+						courses_list.append(Service.get_course_by_id(course[0]))
+					cur.close()
+					conn.close()
+					return courses_list
+				else:
+					return False
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return  e
+
+	@staticmethod
+	def delete_enrolled_course(user_id, course_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				delete_query = "DELETE FROM enrolled_courses WHERE enrolled_courses.user_id = %s \
 				and enrolled_courses.course_id = %s"
 				cur.execute(delete_query, (user_id,course_id,))
 
@@ -33,6 +58,7 @@ class Service:
 
 	@staticmethod
 	def validate_courses(course1, course2):
+		return True
 		conn = None
 		cur = None
 		try:
@@ -74,7 +100,7 @@ class Service:
 			if(conn):
 				payment = Payment()
 				cur = conn.cursor()
-				query = "SELECT cart.course_id from cart WHERE user_id = %s"
+				query = "SELECT cart.course_id from cart WHERE user_id = %s AND enrolled = 'false'"
 				cur.execute(query,(user_id,))
 				courses = cur.fetchall()
 				course_status=[]
@@ -86,6 +112,14 @@ class Service:
 				if(False in course_status):
 					return False
 				else:
+					for course in courses:
+						insert_query = "INSERT INTO enrolled_courses(user_id, course_id) VALUES(%s, %s)"
+						cur.execute(insert_query, (user_id, course[0],))
+						conn.commit()
+						delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s"
+						cur.execute(delete_from_cart_table, (course[0], user_id,))
+						conn.commit()
+
 					payment.cost = 1300 * len(courses)
 					finanical_aid_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
 					cur.execute(finanical_aid_query, (user_id,))
@@ -293,7 +327,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				login_query = "SELECT users.otp, users.user_id AS password \
+				login_query = "SELECT users.otp, users.user_id, users.first_name, users.last_name\
 				FROM users WHERE users.email LIKE %s"
 				cur.execute(login_query, (data['email'], ))
 				user = cur.fetchone()
@@ -301,6 +335,8 @@ class Service:
 				if(user[0]==data['otp']):
 					response.email= data['email']
 					response.user_id = user[1]
+					response.first_name = user[2]
+					response.last_name = user[3]
 					get_role_query = "SELECT user_role.role_id FROM user_role WHERE user_role.user_id = %s"
 					cur.execute(get_role_query, (user[1],))
 					response.role_id = cur.fetchone()[0]
@@ -559,7 +595,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_name, start_time, end_time, location, course_id,\
-				prof_id, days FROM courses WHERE prof_id = %s"
+				prof_id, days, course_code, department, description FROM courses WHERE prof_id = %s"
 				cur.execute(query, (id,))
 				schedules = cur.fetchall()
 				courses_list = []
@@ -573,7 +609,12 @@ class Service:
 						course.course_id = schedule[4]
 						course.prof_id = schedule[5]
 						course.days = schedule[6]
+						course.course_code = schedule[7]
+						course.comment = Service.get_comment_by(schedule[4])
+						course.professor = Service.get_user_by(schedule[5])
 						course.start_dates =Service.get_start_dates(schedule[6])
+						course.department = schedule[8]
+						course.description = schedule[9]
 						courses_list.append(course)
 						cur.close()
 						conn.close()
@@ -602,7 +643,7 @@ class Service:
 			else:
 				return "Unable to connect"
 		except Exception as e:
-				return  e
+			return  e
 
 	@staticmethod
 	def get_cart(id):
@@ -615,7 +656,7 @@ class Service:
 				query = "SELECT courses.course_id,courses.course_name, courses.description, \
 				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
 				courses.days, courses.department, courses.course_code FROM courses WHERE \
-				course_id IN (SELECT course_id FROM cart where user_id = %s)"
+				course_id IN (SELECT course_id FROM cart WHERE user_id = %s AND enrolled = 'false')"
 				cur.execute(query, (id,))
 				courses = cur.fetchall()
 				course_list = []
@@ -742,6 +783,7 @@ class Service:
 					course.professor = Service.get_user_by(obj[3])
 					course.comment = Service.get_comment_by(obj[0])
 					course.course_code = obj[9]
+					course.start_dates =Service.get_start_dates(obj[7])
 					cur.close()
 					conn.close()
 					return course
