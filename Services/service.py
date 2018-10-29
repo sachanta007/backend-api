@@ -116,8 +116,8 @@ class Service:
 						insert_query = "INSERT INTO enrolled_courses(user_id, course_id) VALUES(%s, %s)"
 						cur.execute(insert_query, (user_id, course[0],))
 						conn.commit()
-						update_cart_table = "UPDATE cart SET enrolled = 'true' WHERE course_id = %s"
-						cur.execute(update_cart_table, (course[0],))
+						update_cart_table = "UPDATE cart SET enrolled = 'true' WHERE course_id = %s and user_id = %s"
+						cur.execute(update_cart_table, (course[0], user_id,))
 						conn.commit()
 
 					payment.cost = 1300 * len(courses)
@@ -643,7 +643,7 @@ class Service:
 			else:
 				return "Unable to connect"
 		except Exception as e:
-				return  e
+			return  e
 
 	@staticmethod
 	def get_cart(id):

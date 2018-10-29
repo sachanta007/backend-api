@@ -52,9 +52,10 @@ ALTER COLUMN days TYPE INTEGER[] USING ARRAY[days]::INTEGER[];
 ALTER TABLE courses ADD COLUMN course_code VARCHAR(40);
 
 CREATE TABLE IF NOT EXISTS cart(
-  cart_id SERIAL PRIMARY KEY,
+  cart_id SERIAL,
   course_id INTEGER,
-  user_id INTEGER
+  user_id INTEGER,
+  PRIMARY KEY(course_id, user_id)
 );
 CREATE TABLE IF NOT EXISTS course_comments(
   comment_id SERIAL PRIMARY KEY,
