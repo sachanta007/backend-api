@@ -100,7 +100,7 @@ class Service:
 			if(conn):
 				payment = Payment()
 				cur = conn.cursor()
-				query = "SELECT cart.course_id from cart WHERE user_id = %s"
+				query = "SELECT cart.course_id from cart WHERE user_id = %s AND enrolled = 'false'"
 				cur.execute(query,(user_id,))
 				courses = cur.fetchall()
 				course_status=[]
