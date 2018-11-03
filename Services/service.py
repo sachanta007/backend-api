@@ -670,7 +670,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				select_query = "SELECT user_id FROM users WHERE email LIKE %s AND type = %s"
+				select_query = "SELECT user_id, first_name FROM users WHERE email LIKE %s AND type = %s"
 				cur.execute(select_query, (email, 'fb', ));
 				obj = cur.fetchone()
 				response = User()
@@ -681,6 +681,7 @@ class Service:
 					response.email= email
 					response.user_id = obj[0]
 					response.role_id = role[0]
+					response.first_name = obj[1] 
 					response.token = (Jwt.encode_auth_token(user_id=obj[0], role_id=response.role_id)).decode()
 					cur.close()
 					conn.close()
