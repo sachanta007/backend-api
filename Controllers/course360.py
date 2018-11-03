@@ -359,6 +359,34 @@ def get_course_by(course_id):
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route('/checkFbUserExistence/email/<email>')
+@cross_origin()
+def check_fb_user_existence(email):
+	try:
+		response = Service.check_fb_user_existence(email)
+		if(response):
+			return jsonpickle.encode(response, unpicklable=False), 200
+		else:
+			return jsonify({"Error": "Something went wrong"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/registerFbUser', methods=['POST'])
+@cross_origin()
+def register_fb_user():
+	data = request.json
+	try:
+		response = Service.register_fb_user(data)
+		if(response):
+			return jsonpickle.encode(response, unpicklable=False), 200
+		else:
+			return jsonify({"Error": "Something went wrong"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+
+
+
 if __name__ == '__main__':
     #app.debug = True
     app.run(host = '0.0.0.0', port = 5000)

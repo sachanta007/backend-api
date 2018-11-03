@@ -661,3 +661,60 @@ class Service:
 
 		except Exception as e:
 			return e
+
+	@staticmethod
+	def check_fb_user_existence(email):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				select_query = "SELECT user_id FROM users WHERE email LIKE %s AND type = %s"
+				cur.execute(select_query, (email, 'fb', ));
+				obj = cur.fetchone()
+				response = User()
+				if(obj):
+					get_role = "SELECT role_id FROM user_role WHERE user_id = %s"
+					cur.execute(get_role, (obj[0],));
+					role = cur.fetchone()
+					response.email= email
+					response.user_id = obj[0]
+					response.role_id = role[0]
+					response.token = (Jwt.encode_auth_token(user_id=obj[0], role_id=response.role_id)).decode()
+					cur.close()
+					conn.close()
+					return response
+				else:
+					cur.close()
+					conn.close()
+					return False
+			else:
+				return False
+		except Exception as e:
+			return  e
+
+	@staticmethod
+	def register_fb_user(data):
+		cur = None
+		conn = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+
+				register_query = "INSERT INTO users(first_name, email, access_token, \
+				type, status) VALUES (%s, %s, %s, %s, %s) RETURNING user_id"
+				cur.execute(register_query, (data['firstName'], \
+					data['email'], data['accessToken'], 'fb', 'active'));
+				user_id = cur.fetchone()[0]
+				add_role_query = "INSERT INTO user_role(user_id, role_id) VALUES (%s, %s)"
+				cur.execute(add_role_query, (user_id, data['role'],))
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return e

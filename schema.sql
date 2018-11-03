@@ -62,3 +62,6 @@ CREATE TABLE IF NOT EXISTS course_comments(
   comment VARCHAR(100),
   course_ratings INTEGER
 );
+
+ALTER TABLE users ADD COLUMN type VARCHAR(20) DEFAULT 'email';
+ALTER TABLE users ADD COLUMN access_token VARCHAR(400);
