@@ -378,6 +378,7 @@ def register_fb_user():
 	try:
 		response = Service.register_fb_user(data)
 		if(response):
+			response = Service.check_fb_user_existence(data['email'])
 			return jsonpickle.encode(response, unpicklable=False), 200
 		else:
 			return jsonify({"Error": "Something went wrong"}), 500
