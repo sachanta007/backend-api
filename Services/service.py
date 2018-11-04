@@ -895,3 +895,31 @@ class Service:
 					return []
 		except Exception as e:
 			return e
+
+	@staticmethod
+	def get_students_by_course(id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "select user_id from enrolled_courses where course_id = %s"
+				cur.execute(query, (id,))
+				students = cur.fetchall()
+				course = Service.get_course_by_id(id)
+				students_list = []
+				if(len(students)):
+					for student in students:
+						students_list.append(Service.get_user_by(student[0]))
+
+					cur.close()
+					conn.close()
+					course.students = students_list
+					return course
+				else:
+					cur.close()
+					conn.close()
+					return []
+		except Exception as e:
+			return e

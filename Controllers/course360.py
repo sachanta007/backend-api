@@ -454,6 +454,23 @@ def get_student_schedule(id):
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route('/getStudentsByCourse/id/<id>')
+@cross_origin()
+def get_students_by_course(id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_students_by_course(id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 
 if __name__ == '__main__':
     #app.debug = True

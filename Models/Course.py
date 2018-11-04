@@ -12,3 +12,4 @@ class Course:
         self.course_code = None
         self.user_id = None
         self.comment = None
+        self.students = None
