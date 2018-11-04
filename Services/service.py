@@ -814,7 +814,7 @@ class Service:
 					response.email= email
 					response.user_id = obj[0]
 					response.role_id = role[0]
-					response.first_name = obj[1] 
+					response.first_name = obj[1]
 					response.token = (Jwt.encode_auth_token(user_id=obj[0], role_id=response.role_id)).decode()
 					cur.close()
 					conn.close()
@@ -850,5 +850,48 @@ class Service:
 				return True
 			else:
 				return "Unable to connect"
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def get_student_schedule(id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT courses.course_name, courses.start_time, courses.end_time, courses.location, courses.course_id, \
+				courses.prof_id, courses.days, courses.course_code, courses.department, courses.description FROM courses, \
+				(SELECT course_id FROM enrolled_courses WHERE user_id = %s) as enrolled_courses \
+				WHERE enrolled_courses.course_id = courses.course_id"
+				cur.execute(query, (id,))
+				schedules = cur.fetchall()
+				courses_list = []
+				if(len(schedules)):
+					for schedule in schedules:
+						course = Course()
+						course.user_id = id
+						course.course_name = schedule[0]
+						course.start_time = schedule[1]
+						course.end_time = schedule[2]
+						course.location = schedule[3]
+						course.course_id = schedule[4]
+						course.prof_id = schedule[5]
+						course.days = schedule[6]
+						course.course_code = schedule[7]
+						course.comment = Service.get_comment_by(schedule[4])
+						course.professor = Service.get_user_by(schedule[5])
+						course.start_dates =Service.get_start_dates(schedule[6])
+						course.department = schedule[8]
+						course.description = schedule[9]
+						courses_list.append(course)
+						cur.close()
+						conn.close()
+					return courses_list
+				else:
+					cur.close()
+					conn.close()
+					return []
 		except Exception as e:
 			return e
