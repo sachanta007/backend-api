@@ -758,6 +758,44 @@ class Service:
 		except Exception as e:
 			return e
 
+
+	@staticmethod
+	def get_course_by_course_and_professor(course_id, professor_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
+				course_code FROM courses WHERE course_id = %s AND prof_id = %s"
+				cur.execute(query, (course_id, professor_id,))
+				obj = cur.fetchone()
+				if(obj):
+					course = Course()
+					course.course_id=obj[0]
+					course.course_name=obj[1]
+					course.description=obj[2]
+					course.location = obj[4]
+					course.start_time = obj[5]
+					course.end_time = obj[6]
+					course.days = obj[7]
+					course.department = obj[8]
+					course.professor = Service.get_user_by(obj[3])
+					course.comment = Service.get_comment_by(obj[0])
+					course.course_code = obj[9]
+					course.start_dates =Service.get_start_dates(obj[7])
+					cur.close()
+					conn.close()
+					return course
+				else:
+					cur.close()
+					conn.close()
+					return []
+
+		except Exception as e:
+			return e
+
 	@staticmethod
 	def get_course_by_id(course_id):
 		conn = None
@@ -908,6 +946,36 @@ class Service:
 				cur.execute(query, (id,))
 				students = cur.fetchall()
 				course = Service.get_course_by_id(id)
+				students_list = []
+				if(len(students)):
+					for student in students:
+						students_list.append(Service.get_user_by(student[0]))
+
+					cur.close()
+					conn.close()
+					course.students = students_list
+					return course
+				else:
+					cur.close()
+					conn.close()
+					return []
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def get_students_by_course_and_professor(course_id, professor_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT user_id FROM enrolled_courses, (SELECT courses.course_id FROM courses \
+				WHERE courses.course_id = %s AND courses.prof_id =%s) AS courses \
+				WHERE courses.course_id = enrolled_courses.course_id"
+				cur.execute(query, (course_id, professor_id))
+				students = cur.fetchall()
+				course = Service.get_course_by_course_and_professor(course_id, professor_id)
 				students_list = []
 				if(len(students)):
 					for student in students:
