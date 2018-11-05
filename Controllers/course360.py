@@ -61,7 +61,7 @@ def enroll_courses():
 			if(response):
 				return jsonpickle.encode(response, unpicklable=False), 200
 			else:
-				return jsonify({'Error':"Something went wrong"}), 500
+				return jsonify({'Error':"Course timings clash"}), 500
 		else:
 			return jsonify({"Error": "Invalid token"}), 500
 	except Exception as e:
