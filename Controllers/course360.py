@@ -67,6 +67,23 @@ def enroll_courses():
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route('/getCourseBy/course/<course_id>')
+@cross_origin()
+def get_course_by(course_id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_course_by_id(course_id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 @app.route('/getAllCourses/start/<start>/end/<end>')
 @cross_origin()
 def get_all_courses(start, end):
