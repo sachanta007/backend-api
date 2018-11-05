@@ -58,7 +58,7 @@ class Service:
 
 	@staticmethod
 	def validate_courses(course1, course2):
-		return True
+
 		conn = None
 		cur = None
 		try:
@@ -77,7 +77,7 @@ class Service:
 				course2_start_time = course2_days[1]
 				course1_end_time = course1_days[2]
 				course2_end_time = course2_days[2]
-
+	
 				if(course1_start_time == course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return False
@@ -88,7 +88,7 @@ class Service:
 					return True
 
 		except Exception as e:
-				return e
+			return e
 
 	@staticmethod
 	def enroll_courses(data):
@@ -119,7 +119,6 @@ class Service:
 						delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s"
 						cur.execute(delete_from_cart_table, (course[0], user_id,))
 						conn.commit()
-
 					payment.cost = 1300 * len(courses)
 					finanical_aid_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
 					cur.execute(finanical_aid_query, (user_id,))
