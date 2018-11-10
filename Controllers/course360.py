@@ -411,6 +411,100 @@ def save_comment():
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route('/getCourseBy/course/<course_id>')
+@cross_origin()
+def get_course_by(course_id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_course_by_id(course_id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/checkFbUserExistence/email/<email>')
+@cross_origin()
+def check_fb_user_existence(email):
+	try:
+		response = Service.check_fb_user_existence(email)
+		if(response):
+			return jsonpickle.encode(response, unpicklable=False), 200
+		else:
+			return jsonify({"Error": "Something went wrong"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/registerFbUser', methods=['POST'])
+@cross_origin()
+def register_fb_user():
+	data = request.json
+	try:
+		response = Service.register_fb_user(data)
+		if(response):
+			response = Service.check_fb_user_existence(data['email'])
+			return jsonpickle.encode(response, unpicklable=False), 200
+		else:
+			return jsonify({"Error": "Something went wrong"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/getStudentSchedule/id/<id>')
+@cross_origin()
+def get_student_schedule(id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_student_schedule(id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/getStudentsByCourse/id/<id>')
+@cross_origin()
+def get_students_by_course(id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_students_by_course(id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/getStudentsByCourseAndProfessor/course/<course_id>/professor/<professor_id>')
+@cross_origin()
+def get_students_by_course_and_professor(course_id, professor_id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_students_by_course_and_professor(course_id, professor_id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 if __name__ == '__main__':
     #app.debug = True
     app.run(host = '0.0.0.0', port = 5000)

@@ -757,6 +757,44 @@ class Service:
 		except Exception as e:
 			return e
 
+
+	@staticmethod
+	def get_course_by_course_and_professor(course_id, professor_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
+				course_code FROM courses WHERE course_id = %s AND prof_id = %s"
+				cur.execute(query, (course_id, professor_id,))
+				obj = cur.fetchone()
+				if(obj):
+					course = Course()
+					course.course_id=obj[0]
+					course.course_name=obj[1]
+					course.description=obj[2]
+					course.location = obj[4]
+					course.start_time = obj[5]
+					course.end_time = obj[6]
+					course.days = obj[7]
+					course.department = obj[8]
+					course.professor = Service.get_user_by(obj[3])
+					course.comment = Service.get_comment_by(obj[0])
+					course.course_code = obj[9]
+					course.start_dates =Service.get_start_dates(obj[7])
+					cur.close()
+					conn.close()
+					return course
+				else:
+					cur.close()
+					conn.close()
+					return []
+
+		except Exception as e:
+			return e
+
 	@staticmethod
 	def get_course_by_id(course_id):
 		conn = None
@@ -791,5 +829,164 @@ class Service:
 					conn.close()
 					return []
 
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def check_fb_user_existence(email):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				select_query = "SELECT user_id, first_name FROM users WHERE email LIKE %s AND type = %s"
+				cur.execute(select_query, (email, 'fb', ));
+				obj = cur.fetchone()
+				response = User()
+				if(obj):
+					get_role = "SELECT role_id FROM user_role WHERE user_id = %s"
+					cur.execute(get_role, (obj[0],));
+					role = cur.fetchone()
+					response.email= email
+					response.user_id = obj[0]
+					response.role_id = role[0]
+					response.first_name = obj[1]
+					response.token = (Jwt.encode_auth_token(user_id=obj[0], role_id=response.role_id)).decode()
+					cur.close()
+					conn.close()
+					return response
+				else:
+					cur.close()
+					conn.close()
+					return False
+			else:
+				return False
+		except Exception as e:
+			return  e
+
+	@staticmethod
+	def register_fb_user(data):
+		cur = None
+		conn = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+
+				register_query = "INSERT INTO users(first_name, email, access_token, \
+				type, status) VALUES (%s, %s, %s, %s, %s) RETURNING user_id"
+				cur.execute(register_query, (data['firstName'], \
+					data['email'], data['accessToken'], 'fb', 'active'));
+				user_id = cur.fetchone()[0]
+				add_role_query = "INSERT INTO user_role(user_id, role_id) VALUES (%s, %s)"
+				cur.execute(add_role_query, (user_id, data['role'],))
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def get_student_schedule(id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT courses.course_name, courses.start_time, courses.end_time, courses.location, courses.course_id, \
+				courses.prof_id, courses.days, courses.course_code, courses.department, courses.description FROM courses, \
+				(SELECT course_id FROM enrolled_courses WHERE user_id = %s) as enrolled_courses \
+				WHERE enrolled_courses.course_id = courses.course_id"
+				cur.execute(query, (id,))
+				schedules = cur.fetchall()
+				courses_list = []
+				if(len(schedules)):
+					for schedule in schedules:
+						course = Course()
+						course.user_id = id
+						course.course_name = schedule[0]
+						course.start_time = schedule[1]
+						course.end_time = schedule[2]
+						course.location = schedule[3]
+						course.course_id = schedule[4]
+						course.prof_id = schedule[5]
+						course.days = schedule[6]
+						course.course_code = schedule[7]
+						course.comment = Service.get_comment_by(schedule[4])
+						course.professor = Service.get_user_by(schedule[5])
+						course.start_dates =Service.get_start_dates(schedule[6])
+						course.department = schedule[8]
+						course.description = schedule[9]
+						courses_list.append(course)
+						cur.close()
+						conn.close()
+					return courses_list
+				else:
+					cur.close()
+					conn.close()
+					return []
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def get_students_by_course(id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "select user_id from enrolled_courses where course_id = %s"
+				cur.execute(query, (id,))
+				students = cur.fetchall()
+				course = Service.get_course_by_id(id)
+				students_list = []
+				if(len(students)):
+					for student in students:
+						students_list.append(Service.get_user_by(student[0]))
+
+					cur.close()
+					conn.close()
+					course.students = students_list
+					return course
+				else:
+					cur.close()
+					conn.close()
+					return []
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def get_students_by_course_and_professor(course_id, professor_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT user_id FROM enrolled_courses, (SELECT courses.course_id FROM courses \
+				WHERE courses.course_id = %s AND courses.prof_id =%s) AS courses \
+				WHERE courses.course_id = enrolled_courses.course_id"
+				cur.execute(query, (course_id, professor_id))
+				students = cur.fetchall()
+				course = Service.get_course_by_course_and_professor(course_id, professor_id)
+				students_list = []
+				if(len(students)):
+					for student in students:
+						students_list.append(Service.get_user_by(student[0]))
+
+					cur.close()
+					conn.close()
+					course.students = students_list
+					return course
+				else:
+					cur.close()
+					conn.close()
+					return []
 		except Exception as e:
 			return e
