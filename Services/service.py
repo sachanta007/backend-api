@@ -10,8 +10,29 @@ import datetime
 
 class Service:
 
-<<<<<<< HEAD
-=======
+	@staticmethod
+	def personal_details(user_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				update_query = "UPDATE users SET first_name = %s, middle_name = %s, last_name = %s, dob = %s,\
+				gender = %s, permanent_address = %s, present_address = %s, alt_email = %s, phone= %s , cgpa = %s, \
+				program = %s WHERE  users.user_id = %s"
+				cur.execute(update_query, (users['first_name'], users['middle_name'], users['last_name'], users['dob'],\
+				users['gender'],users['permanent_address'], users['present_address'], users['alt_email'], users['phone'],\
+				users['cgpa'], users['program'],users['user_id'], ));
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return  e
+
 	@staticmethod
 	def delete_enrolled_course(user_id,course_id):
 		conn = None
@@ -32,77 +53,86 @@ class Service:
 				return "Unable to connect"
 		except Exception as e:
 			return  e
+
 	@staticmethod
 	def validate_courses(course1, course2):
+
 		conn = None
 		cur = None
 		try:
 			conn = PgConfig.db()
+			cur = conn.cursor()
 			query1 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
 			cur.execute(query1,(course1,))
 			course1_days = cur.fetchone()
 			query2 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
 			cur.execute(query2,(course2,))
 			course2_days = cur.fetchone()
-
-			if(course1_days != course2_days2):
+			if(course1_days[0] != course2_days[0]):
 				return True
 			else:
-
 				course1_start_time = course1_days[1]
 				course2_start_time = course2_days[1]
 				course1_end_time = course1_days[2]
 				course2_end_time = course2_days[2]
 
-				if(course1_start_time = course2_start_time):
+				if(course1_start_time == course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return False
-				elif(course2_start_time < course1_end_time):
+				elif(course2_start_time <= course1_end_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return False
 				else:
-					return True
-
-			except Exception as e:
-				return e
-
-
-	@staticmethod
-	def enroll_courses(user_id):
-		conn = None
-		cur = None
-		try:
-			conn = PgConfig.db()
-			if(conn):
-				cur = conn.cursor()
-				query = "SELECT cart.course_id from cart WHERE user_id = %s)"
-				 cur.execute(query,(user_id,))
-				 courses = cur.fetchall()
-				 course_status=[]
-				 for i in range(0, len(courses)):
-					 for j in range(i+1, len(courses)):
-						 course_status.append(Service.validate_courses(courses[i][0], courses[j][0]))
-
-				if(False in course_status):
-					return False
-				else:
-					otp = Service.generate_random_number(4)
-					update_query = "UPDATE users SET otp = %s WHERE users.user_id LIKE %s"
-					cur.execute(update_query, (otp,user_id,))
-					conn.commit()
-					get_query = "SELECT finanical_aid from users WHERE users.user_id LIKE %s"
-					cur.execute(get_query,(user_id,))
-					aid = cur.fetchall()
-					print("Validation successful. Please proceed to pay")
-					print("Financial aid:" +aid)
-					print(" Please pay $" +1300*len(courses))
-
 					return True
 
 		except Exception as e:
 			return e
 
->>>>>>> SICECR2-52
+	@staticmethod
+	def enroll_courses(data):
+		conn = None
+		cur = None
+		user_id = data['user_id']
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				payment = Payment()
+				cur = conn.cursor()
+				query = "SELECT cart.course_id from cart WHERE user_id = %s AND enrolled = 'false'"
+				cur.execute(query,(user_id,))
+				courses = cur.fetchall()
+				course_status=[]
+				for i in range(0, len(courses)-1):
+					 for j in range(i+1, len(courses)):
+						 course_status.append(Service.validate_courses(courses[i][0], courses[j][0]))
+
+				payment = Payment()
+				if(False in course_status):
+					return False
+				else:
+					for course in courses:
+						insert_query = "INSERT INTO enrolled_courses(user_id, course_id) VALUES(%s, %s)"
+						cur.execute(insert_query, (user_id, course[0],))
+						conn.commit()
+						delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s"
+						cur.execute(delete_from_cart_table, (course[0], user_id,))
+						conn.commit()
+					payment.cost = 1300 * len(courses)
+					finanical_aid_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
+					cur.execute(finanical_aid_query, (user_id,))
+					obj = cur.fetchone()
+					if(obj[0]):
+						payment.finanical_aid = obj[0]
+					else:
+						payment.finanical_aid = Service.generate_random_number(3)
+						update_query = "UPDATE users SET finanical_aid = %s WHERE users.user_id = %s"
+						cur.execute(update_query, (payment.finanical_aid,user_id,))
+						conn.commit()
+					return payment
+		except Exception as e:
+			return e
+
+
 	@staticmethod
 	def get_all_courses(start, end):
 		conn = None

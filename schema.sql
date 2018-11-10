@@ -69,12 +69,10 @@ CREATE TABLE IF NOT EXISTS enrolled_courses(
   course_name VARCHAR(20),
   payment VARCHAR(100) DEFAULT False
 );
-<<<<<<< HEAD
-=======
+
 
 ALTER TABLE users ADD COLUMN finanical_aid VARCHAR(10);
 ALTER TABLE cart ADD COLUMN enrolled BOOLEAN DEFAULT FALSE;
 
 ALTER TABLE users ADD COLUMN type VARCHAR(20) DEFAULT 'email';
 ALTER TABLE users ADD COLUMN access_token VARCHAR(400);
->>>>>>> dev

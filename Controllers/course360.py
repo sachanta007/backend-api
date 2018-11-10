@@ -15,6 +15,18 @@ cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 # app = Flask(__name__)
 # app.config.from_object(__name__)
 @cross_origin()
+@app.route('/personalDetails', methods = ['POST'])
+def register():
+	try:
+		data = request.json
+		response = Service.personal_details(data)
+		if( response == True):
+			return jsonify({'data': data}), 200
+		else:
+			return jsonify({'Error':response}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 @app.route('/deleteEnrolledCourses' , methods = ['POST'])
 def delete_enrolled_course(user,course):
 	auth_header = request.headers.get('Authorization')
@@ -33,15 +45,18 @@ def delete_enrolled_course(user,course):
 
 @app.route('/enrollCourses',methods=['POST'])
 def enroll_courses():
-	data = request
+	auth_header = request.headers.get('Authorization')
+	data = request.json
 	try:
-		data = request.json
-		response = Service.enroll_courses(app, data)
-
-		if(response == True):
-			return jsonify({'data': data}), 200
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.enroll_courses(data)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({'Error':"Course timings clash"}), 500
 		else:
-			return jsonify({'Error':response}), 500
+			return jsonify({"Error": "Invalid token"}), 500
 	except Exception as e:
 		return jsonify(e), 500
 
@@ -389,8 +404,7 @@ def get_course_by(course_id):
 	except Exception as e:
 		return jsonify(e), 500
 
-<<<<<<< HEAD
-=======
+
 @app.route('/checkFbUserExistence/email/<email>')
 @cross_origin()
 def check_fb_user_existence(email):
@@ -468,7 +482,7 @@ def get_students_by_course_and_professor(course_id, professor_id):
 	except Exception as e:
 		return jsonify(e), 500
 
->>>>>>> dev
+
 if __name__ == '__main__':
     #app.debug = True
     app.run(host = '0.0.0.0', port = 5000)
