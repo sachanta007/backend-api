@@ -14,7 +14,6 @@ cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 # app = Flask(__name__)
 # app.config.from_object(__name__)
-<<<<<<< HEAD
 @cross_origin()
 @app.route('/deleteEnrolledCourses' , methods = ['POST'])
 def delete_enrolled_course(user,course):
@@ -29,75 +28,20 @@ def delete_enrolled_course(user,course):
 				return jsonify({"Error": "Something went wrong"}), 500
 		else:
 				return jsonify({"Error": "Invalid token"}), 500
-=======
-
-@app.route('/getEnrolledCourses/userId/<user_id>',methods=['GET'])
-def get_enrolled_courses(user_id):
-	auth_header = request.headers.get('Authorization')
-	data = request.json
-	try:
-		status = Jwt.decode_auth_token(auth_header)
-		if(status):
-			response = Service.get_enrolled_courses(user_id)
-			if(response):
-				return jsonpickle.encode(response, unpicklable=False), 200
-			else:
-				return jsonify({'Error':"Something went wrong"}), 500
-		else:
-			return jsonify({"Error": "Invalid token"}), 500
-	except Exception as e:
-		return jsonify(e), 500
-
-
-@app.route('/dropCourse/courseId/<course_id>/userId/<user_id>',methods=['GET'])
-def drop_course(course_id, user_id):
-	auth_header = request.headers.get('Authorization')
-	data = request.json
-	try:
-		status = Jwt.decode_auth_token(auth_header)
-		if(status):
-			response = Service.delete_enrolled_course(user_id, course_id)
-			if(response):
-				return  jsonify({'Success':"Dropped the course"}), 200
-			else:
-				return jsonify({'Error':"Something went wrong"}), 500
-		else:
-			return jsonify({"Error": "Invalid token"}), 500
->>>>>>> dev
 	except Exception as e:
 		return jsonify(e), 500
 
 @app.route('/enrollCourses',methods=['POST'])
 def enroll_courses():
-	auth_header = request.headers.get('Authorization')
-	data = request.json
+	data = request
 	try:
-		status = Jwt.decode_auth_token(auth_header)
-		if(status):
-			response = Service.enroll_courses(data)
-			if(response):
-				return jsonpickle.encode(response, unpicklable=False), 200
-			else:
-				return jsonify({'Error':"Course timings clash"}), 500
-		else:
-			return jsonify({"Error": "Invalid token"}), 500
-	except Exception as e:
-		return jsonify(e), 500
+		data = request.json
+		response = Service.enroll_courses(app, data)
 
-@app.route('/getCourseBy/course/<course_id>')
-@cross_origin()
-def get_course_by(course_id):
-	auth_header = request.headers.get('Authorization')
-	try:
-		status = Jwt.decode_auth_token(auth_header)
-		if(status):
-			response = Service.get_course_by_id(course_id)
-			if(response):
-				return jsonpickle.encode(response, unpicklable=False), 200
-			else:
-				return jsonify({"Error": "Something went wrong"}), 500
+		if(response == True):
+			return jsonify({'data': data}), 200
 		else:
-				return jsonify({"Error": "Invalid token"}), 500
+			return jsonify({'Error':response}), 500
 	except Exception as e:
 		return jsonify(e), 500
 
@@ -228,8 +172,8 @@ def activate_user(email):
 	try:
 		response = Service.activate_user(email)
 		if(response == True):
-			#return redirect("http://course360.herokuapp.com/activated", code=200)
-			return jsonify({'data': 'Your account is activated'}), 200
+			return redirect("http://course360.herokuapp.com/activated", code=200)
+			#jsonify({'data': 'Your account is activated'}), 200
 		else:
 			return jsonify({'Error': "response"}), 500
 	except Exception as e:
@@ -425,6 +369,23 @@ def save_comment():
 				return jsonify({'Error':'Something went wrong'}), 500
 		else:
 			return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/getCourseBy/course/<course_id>')
+@cross_origin()
+def get_course_by(course_id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_course_by_id(course_id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
 	except Exception as e:
 		return jsonify(e), 500
 
