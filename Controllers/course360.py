@@ -9,7 +9,7 @@ app.config.from_object(__name__)
 
 # Below is to enable requests from other domains i.e, enable React to access these APIs
 app.config['CORS_HEADERS'] = 'Content-Type'
-cors = CORS(app, resources={r"/*": {"origins": "*"}})
+cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 
 # app = Flask(__name__)
