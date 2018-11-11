@@ -77,7 +77,7 @@ class Service:
 				course2_start_time = course2_days[1]
 				course1_end_time = course1_days[2]
 				course2_end_time = course2_days[2]
-	
+
 				if(course1_start_time == course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return False
