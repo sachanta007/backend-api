@@ -11,9 +11,9 @@ from random import randint
 import datetime
 
 class Service:
-			
+
 	@staticmethod
-	def personal_details(user_id):
+	def personal_details(users):
 		conn = None
 		cur = None
 		try:
@@ -22,10 +22,10 @@ class Service:
 				cur = conn.cursor()
 				update_query = "UPDATE users SET first_name = %s, middle_name = %s, last_name = %s, dob = %s,\
 				gender = %s, permanent_address = %s, present_address = %s, alt_email = %s, phone= %s , cgpa = %s, \
-				program = %s WHERE  users.user_id = %s"
-				cur.execute(update_query, (users['first_name'], users['middle_name'], users['last_name'], users['dob'],\
-				users['gender'],users['permanent_address'], users['present_address'], users['alt_email'], users['phone'],\
-				users['cgpa'], users['program'],users['user_id'], ));
+				course = %s WHERE  users.user_id = %s"
+				cur.execute(update_query, (users['firstName'], users['middleName'], users['lastName'], users['dob'],\
+				users['gender'],users['permanentAddress'], users['presentAddress'], users['altEmail'], users['phone'],\
+				users['cgpa'], users['course'],users['userId'], ));
 				conn.commit()
 				cur.close()
 				conn.close()
