@@ -11,25 +11,23 @@ import datetime
 class Service:
 
 	@staticmethod
-	def get_enrolled_courses(user_id):
+	def personal_details(user_id):
 		conn = None
 		cur = None
 		try:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				select_query = "SELECT course_id FROM enrolled_courses WHERE enrolled_courses.user_id = %s"
-				cur.execute(select_query, (user_id,))
-				response = cur.fetchall()
-				courses_list=[]
-				if(len(response)):
-					for course in response:
-						courses_list.append(Service.get_course_by_id(course[0]))
-					cur.close()
-					conn.close()
-					return courses_list
-				else:
-					return False
+				update_query = "UPDATE users SET first_name = %s, middle_name = %s, last_name = %s, dob = %s,\
+				gender = %s, permanent_address = %s, present_address = %s, alt_email = %s, phone= %s , cgpa = %s, \
+				program = %s WHERE  users.user_id = %s"
+				cur.execute(update_query, (users['first_name'], users['middle_name'], users['last_name'], users['dob'],\
+				users['gender'],users['permanent_address'], users['present_address'], users['alt_email'], users['phone'],\
+				users['cgpa'], users['program'],users['user_id'], ));
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
 			else:
 				return "Unable to connect"
 		except Exception as e:
