@@ -79,11 +79,11 @@ ALTER TABLE users ADD COLUMN access_token VARCHAR(400);
 
 ALTER TABLE users
 ADD COLUMN middle_name VARCHAR(20),
-dob VARCHAR(15),
-gender VARCHAR(10),
-permanent_address VARCHAR(50),
-present_address VARCHAR(50),
-alt_email VARCHAR(20),
-phone INTEGER,
-cgpa INTEGER,
-course VARCHAR(10);
+ADD COLUMN dob VARCHAR(15),
+ADD COLUMN gender VARCHAR(10),
+ADD COLUMN permanent_address VARCHAR(50),
+ADD COLUMN present_address VARCHAR(50),
+ADD COLUMN alt_email VARCHAR(20),
+ADD COLUMN phone INTEGER,
+ADD COLUMN cgpa INTEGER,
+ADD COLUMN course VARCHAR(10);
