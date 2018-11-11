@@ -8,3 +8,4 @@ passlib
 flask-cors
 jsonpickle
 uwsgi
+sendgrid
