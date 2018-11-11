@@ -76,3 +76,14 @@ ALTER TABLE cart ADD COLUMN enrolled BOOLEAN DEFAULT FALSE;
 
 ALTER TABLE users ADD COLUMN type VARCHAR(20) DEFAULT 'email';
 ALTER TABLE users ADD COLUMN access_token VARCHAR(400);
+
+ALTER TABLE users
+ADD COLUMN middle_name VARCHAR(20),
+dob VARCHAR(15),
+gender VARCHAR(10),
+permanent_address VARCHAR(50),
+present_address VARCHAR(50),
+alt_email VARCHAR(20),
+phone INTEGER,
+cgpa INTEGER,
+course VARCHAR(10);
