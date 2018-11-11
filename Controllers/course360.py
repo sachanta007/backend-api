@@ -16,14 +16,18 @@ cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 # app.config.from_object(__name__)
 @cross_origin()
 @app.route('/personalDetails', methods = ['POST'])
-def register():
+def personal_details():
+	data = request.json
 	try:
-		data = request.json
-		response = Service.personal_details(data)
-		if( response == True):
-			return jsonify({'data': data}), 200
+		token = request.headers.get('Authorization')
+		if(Service.auth_token(token)):
+				response = Service.personal_details(data)
+				if( response == True):
+					return jsonify({'data': data}), 200
+				else:
+					return jsonify({'Error':'Something went wrong'}), 500
 		else:
-			return jsonify({'Error':response}), 500
+			return jsonify({'Error': 'Unauthorized'}), 500
 	except Exception as e:
 		return jsonify(e), 500
 

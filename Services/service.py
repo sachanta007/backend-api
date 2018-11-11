@@ -4,12 +4,14 @@ from Services.crypto import Crypto
 from Services.jwt import Jwt
 from Models.User import User
 from Models.Course import Course
+import sendgrid
+import os
 
 from random import randint
 import datetime
 
 class Service:
-
+			
 	@staticmethod
 	def personal_details(user_id):
 		conn = None
