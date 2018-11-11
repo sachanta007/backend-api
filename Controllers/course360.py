@@ -14,36 +14,39 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 # app = Flask(__name__)
 # app.config.from_object(__name__)
-@cross_origin()
-@app.route('/personalDetails', methods = ['POST'])
-def personal_details():
-	data = request.json
-	try:
-		token = request.headers.get('Authorization')
-		if(Service.auth_token(token)):
-				response = Service.personal_details(data)
-				if( response == True):
-					return jsonify({'data': data}), 200
-				else:
-					return jsonify({'Error':'Something went wrong'}), 500
-		else:
-			return jsonify({'Error': 'Unauthorized'}), 500
-	except Exception as e:
-		return jsonify(e), 500
 
-@app.route('/deleteEnrolledCourses' , methods = ['POST'])
-def delete_enrolled_course(user,course):
+@app.route('/getEnrolledCourses/userId/<user_id>',methods=['GET'])
+def get_enrolled_courses(user_id):
 	auth_header = request.headers.get('Authorization')
+	data = request.json
 	try:
 		status = Jwt.decode_auth_token(auth_header)
 		if(status):
-			response = Service.delete_enrolled_course(user,course)
+			response = Service.get_enrolled_courses(user_id)
 			if(response):
-				return jsonify({"response": "Success"}), 200
+				return jsonpickle.encode(response, unpicklable=False), 200
 			else:
-				return jsonify({"Error": "Something went wrong"}), 500
+				return jsonify({'Error':"Something went wrong"}), 500
 		else:
-				return jsonify({"Error": "Invalid token"}), 500
+			return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+
+@app.route('/dropCourse/courseId/<course_id>/userId/<user_id>',methods=['GET'])
+def drop_course(course_id, user_id):
+	auth_header = request.headers.get('Authorization')
+	data = request.json
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.delete_enrolled_course(user_id, course_id)
+			if(response):
+				return  jsonify({'Success':"Dropped the course"}), 200
+			else:
+				return jsonify({'Error':"Something went wrong"}), 500
+		else:
+			return jsonify({"Error": "Invalid token"}), 500
 	except Exception as e:
 		return jsonify(e), 500
 
@@ -61,6 +64,23 @@ def enroll_courses():
 				return jsonify({'Error':"Course timings clash"}), 500
 		else:
 			return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+@app.route('/getCourseBy/course/<course_id>')
+@cross_origin()
+def get_course_by(course_id):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.get_course_by_id(course_id)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
 	except Exception as e:
 		return jsonify(e), 500
 
@@ -191,8 +211,8 @@ def activate_user(email):
 	try:
 		response = Service.activate_user(email)
 		if(response == True):
-			return redirect("http://course360.herokuapp.com/activated", code=200)
-			#jsonify({'data': 'Your account is activated'}), 200
+			#return redirect("http://course360.herokuapp.com/activated", code=200)
+			return jsonify({'data': 'Your account is activated'}), 200
 		else:
 			return jsonify({'Error': "response"}), 500
 	except Exception as e:
@@ -467,7 +487,6 @@ def get_students_by_course_and_professor(course_id, professor_id):
 				return jsonify({"Error": "Invalid token"}), 500
 	except Exception as e:
 		return jsonify(e), 500
-
 
 if __name__ == '__main__':
     #app.debug = True
