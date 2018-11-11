@@ -9,7 +9,7 @@ from random import randint
 import datetime
 
 class Service:
-
+			
 	@staticmethod
 	def personal_details(user_id):
 		conn = None
