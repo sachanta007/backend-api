@@ -12,3 +12,4 @@ class User:
         self.token = None
         self.comment = None
         self.rating = None
+        self.color_theme = None
