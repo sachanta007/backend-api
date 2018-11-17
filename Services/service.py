@@ -77,7 +77,7 @@ class Service:
 				course2_start_time = course2_days[1]
 				course1_end_time = course1_days[2]
 				course2_end_time = course2_days[2]
-	
+
 				if(course1_start_time == course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return False
@@ -988,5 +988,27 @@ class Service:
 					cur.close()
 					conn.close()
 					return []
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def update_financial_aid(value, student):
+		cur = None
+		conn = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				update_financial_aid_query = "UPDATE users SET finanical_aid = %s WHERE user_id = %s RETURNING user_id"
+				cur.execute(update_financial_aid_query, (value, student,));
+				user_id = cur.fetchone()[0]
+				conn.commit()
+				cur.close()
+				conn.close()
+				if(user_id):
+					return True
+				return False
+			else:
+				return "Unable to connect"
 		except Exception as e:
 			return e
