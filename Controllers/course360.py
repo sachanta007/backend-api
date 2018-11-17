@@ -508,6 +508,24 @@ def update_financial_aid(value, student):
 	except Exception as e:
 		return jsonify(e), 500
 
+@app.route('/updateColorTheme/theme/<theme>/student/<student>')
+@cross_origin()
+def update_color_theme(theme, student):
+	auth_header = request.headers.get('Authorization')
+	try:
+		status = Jwt.decode_auth_token(auth_header)
+		if(status):
+			response = Service.update_color_theme(theme, student)
+			if(response==True):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({"Error": "Something went wrong"}), 500
+		else:
+				return jsonify({"Error": "Invalid token"}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
+
 if __name__ == '__main__':
     #app.debug = True
     app.run(host = '0.0.0.0', port = 5000)

@@ -1012,3 +1012,25 @@ class Service:
 				return "Unable to connect"
 		except Exception as e:
 			return e
+
+	@staticmethod
+	def update_color_theme(theme, student):
+		cur = None
+		conn = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				update_color_theme_query = "UPDATE users SET color_theme = %s WHERE user_id = %s RETURNING user_id"
+				cur.execute(update_color_theme_query, (theme, student,));
+				user_id = cur.fetchone()[0]
+				conn.commit()
+				cur.close()
+				conn.close()
+				if(user_id):
+					return True
+				return False
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return e
