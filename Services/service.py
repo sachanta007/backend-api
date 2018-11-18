@@ -2,6 +2,7 @@ from Services.pg_config import PgConfig
 from Services.email_config import Email
 from Services.crypto import Crypto
 from Services.jwt import Jwt
+from Services.aws_image import AwsImageHandler
 from Models.User import User
 from Models.Course import Course
 from Models.Payment import Payment
@@ -77,7 +78,7 @@ class Service:
 				course2_start_time = course2_days[1]
 				course1_end_time = course1_days[2]
 				course2_end_time = course2_days[2]
-	
+
 				if(course1_start_time == course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return False
@@ -144,7 +145,7 @@ class Service:
 				cur = conn.cursor()
 				query = "SELECT courses.course_id,courses.course_name, courses.description, \
 				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
-				courses.days, courses.department, courses.course_code FROM courses ORDER BY courses.course_name ASC LIMIT %s OFFSET %s"
+				courses.days, courses.department, courses.course_code, courses.image FROM courses ORDER BY courses.course_name ASC LIMIT %s OFFSET %s"
 				cur.execute(query, (end, start,))
 				courses = cur.fetchall()
 				course_list = []
@@ -161,6 +162,7 @@ class Service:
 						course.days = response[7]
 						course.department = response[8]
 						course.course_code = response[9]
+						course.image = response[10]
 						course.comment = Service.get_comment_by(response[0])
 						course_list.append(course)
 				else:
@@ -205,7 +207,8 @@ class Service:
 				cur.execute(update_query, (courses['course_name'], courses['description'], \
 				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
 				courses['days'], courses['department'], courses['course_code'], courses['course_id'], ));
-
+				if(courses['image']):
+					AwsImageHandler.upload_image(courses["image"], str(courses['course_id'])+".jpg")
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -228,12 +231,15 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				insert_query = "INSERT INTO courses(course_name, description, prof_id, location,\
-				start_time, end_time, days, department, course_code) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+				start_time, end_time, days, department, course_code) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING course_id"
 
 				cur.execute(insert_query, (courses['course_name'], courses['description'], \
 				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
-				courses['days'], courses['department'], courses['course_code'], ));
-
+				courses['days'], courses['department'], courses['course_code'],));
+				course_id = cur.fetchone()[0]
+				AwsImageHandler.upload_image(courses["image"], str(course_id)+".jpg")
+				update_course = "UPDATE courses SET image = %s WHERE course_id = %s"
+				cur.execute(update_course, ("https://s3.amazonaws.com/course-360/"+str(course_id)+".jpg", course_id,))
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -241,7 +247,7 @@ class Service:
 			else:
 				return "Unable to connect"
 		except Exception as e:
-				return  e
+			return  e
 
 	@staticmethod
 	def register(app, user):
@@ -326,7 +332,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				login_query = "SELECT users.otp, users.user_id, users.first_name, users.last_name\
+				login_query = "SELECT users.otp, users.user_id, users.first_name, users.last_name, users.color_theme\
 				FROM users WHERE users.email LIKE %s"
 				cur.execute(login_query, (data['email'], ))
 				user = cur.fetchone()
@@ -336,6 +342,7 @@ class Service:
 					response.user_id = user[1]
 					response.first_name = user[2]
 					response.last_name = user[3]
+					response.color_theme = user[4]
 					get_role_query = "SELECT user_role.role_id FROM user_role WHERE user_role.user_id = %s"
 					cur.execute(get_role_query, (user[1],))
 					response.role_id = cur.fetchone()[0]
@@ -480,7 +487,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT users.first_name, users.last_name, users.email, users.user_id FROM users,\
+				query = "SELECT users.first_name, users.last_name, users.email, users.user_id, users.color_theme FROM users,\
 				(SELECT user_id FROM user_role WHERE role_id = %s) AS user_role \
 				WHERE users.user_id = user_role.user_id ORDER BY users.user_id LIMIT %s OFFSET %s"
 				cur.execute(query, (role_id, end, start,))
@@ -493,6 +500,7 @@ class Service:
 						user.last_name = response[1]
 						user.email = response[2]
 						user.user_id = response[3]
+						user.color_theme = response[4]
 						user_list.append(user)
 				else:
 					return False
@@ -511,7 +519,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT users.first_name, users.last_name, users.email FROM users WHERE users.user_id = %s"
+				query = "SELECT users.first_name, users.last_name, users.email, users.color_theme FROM users WHERE users.user_id = %s"
 				cur.execute(query, (id,))
 				obj = cur.fetchone()
 				user =User()
@@ -519,6 +527,7 @@ class Service:
 					user.first_name = obj[0]
 					user.last_name = obj[1]
 					user.email = obj[2]
+					user.color_theme = obj[3]
 					user.user_id = id
 				else:
 					return False
@@ -537,7 +546,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
-				course_code FROM courses WHERE course_name ILIKE %s ORDER BY course_name LIMIT %s OFFSET %s"
+				course_code, image FROM courses WHERE course_name ILIKE %s ORDER BY course_name LIMIT %s OFFSET %s"
 				cur.execute(query, (name+'%', end, start,))
 				courses = cur.fetchall()
 				courses_list = []
@@ -555,6 +564,7 @@ class Service:
 						course.professor = Service.get_user_by(obj[3])
 						course.comment = Service.get_comment_by(obj[0])
 						course.course_code = obj[9]
+						course.image = obj[10]
 						courses_list.append(course)
 					cur.close()
 					conn.close()
@@ -594,7 +604,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_name, start_time, end_time, location, course_id,\
-				prof_id, days, course_code, department, description FROM courses WHERE prof_id = %s"
+				prof_id, days, course_code, department, description, image FROM courses WHERE prof_id = %s"
 				cur.execute(query, (id,))
 				schedules = cur.fetchall()
 				courses_list = []
@@ -614,6 +624,7 @@ class Service:
 						course.start_dates =Service.get_start_dates(schedule[6])
 						course.department = schedule[8]
 						course.description = schedule[9]
+						course.image = schedule[10]
 						courses_list.append(course)
 						cur.close()
 						conn.close()
@@ -654,7 +665,7 @@ class Service:
 				cur = conn.cursor()
 				query = "SELECT courses.course_id,courses.course_name, courses.description, \
 				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
-				courses.days, courses.department, courses.course_code FROM courses WHERE \
+				courses.days, courses.department, courses.course_code, courses.image FROM courses WHERE \
 				course_id IN (SELECT course_id FROM cart WHERE user_id = %s AND enrolled = 'false')"
 				cur.execute(query, (id,))
 				courses = cur.fetchall()
@@ -673,6 +684,7 @@ class Service:
 						course.department = response[8]
 						course.course_code = response[9]
 						course.user_id = id
+						course.image = response[10]
 						course_list.append(course)
 				else:
 					return []
@@ -734,7 +746,7 @@ class Service:
 				comment_list =[]
 				for comment in comments:
 					user = User()
-					query = "SELECT first_name, last_name, email, user_id FROM users WHERE user_id = %s"
+					query = "SELECT first_name, last_name, email, user_id, color_theme FROM users WHERE user_id = %s"
 					cur.execute(query, (comment[1], ))
 					response = cur.fetchone()
 					user = User()
@@ -744,6 +756,7 @@ class Service:
 					user.user_id = response[3]
 					user.comment= comment[0]
 					user.rating = comment[2]
+					user.color_theme = response[4]
 					comment_list.append(user)
 
 				cur.close()
@@ -767,7 +780,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
-				course_code FROM courses WHERE course_id = %s AND prof_id = %s"
+				course_code, image FROM courses WHERE course_id = %s AND prof_id = %s"
 				cur.execute(query, (course_id, professor_id,))
 				obj = cur.fetchone()
 				if(obj):
@@ -784,6 +797,7 @@ class Service:
 					course.comment = Service.get_comment_by(obj[0])
 					course.course_code = obj[9]
 					course.start_dates =Service.get_start_dates(obj[7])
+					course.image = obj[10]
 					cur.close()
 					conn.close()
 					return course
@@ -804,7 +818,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
-				course_code FROM courses WHERE course_id = %s"
+				course_code, image FROM courses WHERE course_id = %s"
 				cur.execute(query, (course_id,))
 				obj = cur.fetchone()
 				if(obj):
@@ -821,6 +835,7 @@ class Service:
 					course.comment = Service.get_comment_by(obj[0])
 					course.course_code = obj[9]
 					course.start_dates =Service.get_start_dates(obj[7])
+					course.image = obj[10]
 					cur.close()
 					conn.close()
 					return course
@@ -840,7 +855,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				select_query = "SELECT user_id, first_name FROM users WHERE email LIKE %s AND type = %s"
+				select_query = "SELECT user_id, first_name, color_theme FROM users WHERE email LIKE %s AND type = %s"
 				cur.execute(select_query, (email, 'fb', ));
 				obj = cur.fetchone()
 				response = User()
@@ -852,6 +867,7 @@ class Service:
 					response.user_id = obj[0]
 					response.role_id = role[0]
 					response.first_name = obj[1]
+					response.color_theme = obj[2]
 					response.token = (Jwt.encode_auth_token(user_id=obj[0], role_id=response.role_id)).decode()
 					cur.close()
 					conn.close()
@@ -899,7 +915,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT courses.course_name, courses.start_time, courses.end_time, courses.location, courses.course_id, \
-				courses.prof_id, courses.days, courses.course_code, courses.department, courses.description FROM courses, \
+				courses.prof_id, courses.days, courses.course_code, courses.department, courses.description, courses.image FROM courses, \
 				(SELECT course_id FROM enrolled_courses WHERE user_id = %s) as enrolled_courses \
 				WHERE enrolled_courses.course_id = courses.course_id"
 				cur.execute(query, (id,))
@@ -922,6 +938,7 @@ class Service:
 						course.start_dates =Service.get_start_dates(schedule[6])
 						course.department = schedule[8]
 						course.description = schedule[9]
+						course.image = schedule[10]
 						courses_list.append(course)
 						cur.close()
 						conn.close()
@@ -988,5 +1005,49 @@ class Service:
 					cur.close()
 					conn.close()
 					return []
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def update_financial_aid(value, student):
+		cur = None
+		conn = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				update_financial_aid_query = "UPDATE users SET finanical_aid = %s WHERE user_id = %s RETURNING user_id"
+				cur.execute(update_financial_aid_query, (value, student,));
+				user_id = cur.fetchone()[0]
+				conn.commit()
+				cur.close()
+				conn.close()
+				if(user_id):
+					return True
+				return False
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return e
+
+	@staticmethod
+	def update_color_theme(theme, student):
+		cur = None
+		conn = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				update_color_theme_query = "UPDATE users SET color_theme = %s WHERE user_id = %s RETURNING user_id"
+				cur.execute(update_color_theme_query, (theme, student,));
+				user_id = cur.fetchone()[0]
+				conn.commit()
+				cur.close()
+				conn.close()
+				if(user_id):
+					return True
+				return False
+			else:
+				return "Unable to connect"
 		except Exception as e:
 			return e

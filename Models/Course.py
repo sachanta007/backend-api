@@ -13,3 +13,4 @@ class Course:
         self.user_id = None
         self.comment = None
         self.students = None
+        self.image = None
