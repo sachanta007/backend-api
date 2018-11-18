@@ -13,3 +13,4 @@ class User:
         self.comment = None
         self.rating = None
         self.color_theme = None
+        self.image = None

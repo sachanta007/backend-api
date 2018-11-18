@@ -2,6 +2,7 @@ from Services.pg_config import PgConfig
 from Services.email_config import Email
 from Services.crypto import Crypto
 from Services.jwt import Jwt
+from Services.aws_image import AwsImageHandler
 from Models.User import User
 from Models.Course import Course
 from Models.Payment import Payment
@@ -144,7 +145,7 @@ class Service:
 				cur = conn.cursor()
 				query = "SELECT courses.course_id,courses.course_name, courses.description, \
 				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
-				courses.days, courses.department, courses.course_code FROM courses ORDER BY courses.course_name ASC LIMIT %s OFFSET %s"
+				courses.days, courses.department, courses.course_code, courses.image FROM courses ORDER BY courses.course_name ASC LIMIT %s OFFSET %s"
 				cur.execute(query, (end, start,))
 				courses = cur.fetchall()
 				course_list = []
@@ -161,6 +162,7 @@ class Service:
 						course.days = response[7]
 						course.department = response[8]
 						course.course_code = response[9]
+						course.image = response[10]
 						course.comment = Service.get_comment_by(response[0])
 						course_list.append(course)
 				else:
@@ -205,7 +207,8 @@ class Service:
 				cur.execute(update_query, (courses['course_name'], courses['description'], \
 				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
 				courses['days'], courses['department'], courses['course_code'], courses['course_id'], ));
-
+				if(courses['image']):
+					AwsImageHandler.upload_image(courses["image"], str(courses['course_id'])+".jpg")
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -228,12 +231,15 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				insert_query = "INSERT INTO courses(course_name, description, prof_id, location,\
-				start_time, end_time, days, department, course_code) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+				start_time, end_time, days, department, course_code) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING course_id"
 
 				cur.execute(insert_query, (courses['course_name'], courses['description'], \
 				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
-				courses['days'], courses['department'], courses['course_code'], ));
-
+				courses['days'], courses['department'], courses['course_code'],));
+				course_id = cur.fetchone()[0]
+				AwsImageHandler.upload_image(courses["image"], str(course_id)+".jpg")
+				update_course = "UPDATE courses SET image = %s WHERE course_id = %s"
+				cur.execute(update_course, ("https://s3.amazonaws.com/course-360/"+str(course_id)+".jpg", course_id,))
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -241,7 +247,7 @@ class Service:
 			else:
 				return "Unable to connect"
 		except Exception as e:
-				return  e
+			return  e
 
 	@staticmethod
 	def register(app, user):
@@ -540,7 +546,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
-				course_code FROM courses WHERE course_name ILIKE %s ORDER BY course_name LIMIT %s OFFSET %s"
+				course_code, image FROM courses WHERE course_name ILIKE %s ORDER BY course_name LIMIT %s OFFSET %s"
 				cur.execute(query, (name+'%', end, start,))
 				courses = cur.fetchall()
 				courses_list = []
@@ -558,6 +564,7 @@ class Service:
 						course.professor = Service.get_user_by(obj[3])
 						course.comment = Service.get_comment_by(obj[0])
 						course.course_code = obj[9]
+						course.image = obj[10]
 						courses_list.append(course)
 					cur.close()
 					conn.close()
@@ -597,7 +604,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_name, start_time, end_time, location, course_id,\
-				prof_id, days, course_code, department, description FROM courses WHERE prof_id = %s"
+				prof_id, days, course_code, department, description, image FROM courses WHERE prof_id = %s"
 				cur.execute(query, (id,))
 				schedules = cur.fetchall()
 				courses_list = []
@@ -617,6 +624,7 @@ class Service:
 						course.start_dates =Service.get_start_dates(schedule[6])
 						course.department = schedule[8]
 						course.description = schedule[9]
+						course.image = schedule[10]
 						courses_list.append(course)
 						cur.close()
 						conn.close()
@@ -657,7 +665,7 @@ class Service:
 				cur = conn.cursor()
 				query = "SELECT courses.course_id,courses.course_name, courses.description, \
 				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
-				courses.days, courses.department, courses.course_code FROM courses WHERE \
+				courses.days, courses.department, courses.course_code, courses.image FROM courses WHERE \
 				course_id IN (SELECT course_id FROM cart WHERE user_id = %s AND enrolled = 'false')"
 				cur.execute(query, (id,))
 				courses = cur.fetchall()
@@ -676,6 +684,7 @@ class Service:
 						course.department = response[8]
 						course.course_code = response[9]
 						course.user_id = id
+						course.image = response[10]
 						course_list.append(course)
 				else:
 					return []
@@ -771,7 +780,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
-				course_code FROM courses WHERE course_id = %s AND prof_id = %s"
+				course_code, image FROM courses WHERE course_id = %s AND prof_id = %s"
 				cur.execute(query, (course_id, professor_id,))
 				obj = cur.fetchone()
 				if(obj):
@@ -788,6 +797,7 @@ class Service:
 					course.comment = Service.get_comment_by(obj[0])
 					course.course_code = obj[9]
 					course.start_dates =Service.get_start_dates(obj[7])
+					course.image = obj[10]
 					cur.close()
 					conn.close()
 					return course
@@ -808,7 +818,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT course_id, course_name, description, prof_id, location, start_time, end_time, days, department,\
-				course_code FROM courses WHERE course_id = %s"
+				course_code, image FROM courses WHERE course_id = %s"
 				cur.execute(query, (course_id,))
 				obj = cur.fetchone()
 				if(obj):
@@ -825,6 +835,7 @@ class Service:
 					course.comment = Service.get_comment_by(obj[0])
 					course.course_code = obj[9]
 					course.start_dates =Service.get_start_dates(obj[7])
+					course.image = obj[10]
 					cur.close()
 					conn.close()
 					return course
@@ -904,7 +915,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT courses.course_name, courses.start_time, courses.end_time, courses.location, courses.course_id, \
-				courses.prof_id, courses.days, courses.course_code, courses.department, courses.description FROM courses, \
+				courses.prof_id, courses.days, courses.course_code, courses.department, courses.description, courses.image FROM courses, \
 				(SELECT course_id FROM enrolled_courses WHERE user_id = %s) as enrolled_courses \
 				WHERE enrolled_courses.course_id = courses.course_id"
 				cur.execute(query, (id,))
@@ -927,6 +938,7 @@ class Service:
 						course.start_dates =Service.get_start_dates(schedule[6])
 						course.department = schedule[8]
 						course.description = schedule[9]
+						course.image = schedule[10]
 						courses_list.append(course)
 						cur.close()
 						conn.close()

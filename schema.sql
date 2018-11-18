@@ -79,3 +79,5 @@ ALTER TABLE users ADD COLUMN type VARCHAR(20) DEFAULT 'email';
 ALTER TABLE users ADD COLUMN access_token VARCHAR(400);
 
 ALTER TABLE users ADD COLUMN color_theme VARCHAR(20) DEFAULT 'default';
+ALTER TABLE users add COLUMN image VARCHAR(200);
+ALTER TABLE courses add COLUMN image VARCHAR(200);
