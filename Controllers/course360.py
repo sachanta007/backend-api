@@ -15,6 +15,22 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 # app = Flask(__name__)
 # app.config.from_object(__name__)
 
+@app.route('/personalDetails', methods = ['POST'])
+def personal_details():
+	data = request.json
+	try:
+		token = request.headers.get('Authorization')
+		if(Service.auth_token(token)):
+			response = Service.personal_details(data)
+			if( response == True):
+				return jsonify({'data': data}), 200
+			else:
+				return jsonify({'Error':'Something went wrong'}), 500
+		else:
+			return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 @app.route('/getEnrolledCourses/userId/<user_id>',methods=['GET'])
 def get_enrolled_courses(user_id):
 	auth_header = request.headers.get('Authorization')
