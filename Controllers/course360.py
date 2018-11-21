@@ -15,6 +15,17 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 # app = Flask(__name__)
 # app.config.from_object(__name__)
 
+@app.route("/sendReceipt/email/<email>", methods=['GET'])
+def send_receipt(email):
+	try:
+		response = Service.send_receipt(email)
+		if( response == True):
+			return jsonify({'email': email}), 200
+		else:
+			return jsonify({'Error':response}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 @app.route('/personalDetails', methods = ['POST'])
 def personal_details():
 	data = request.json

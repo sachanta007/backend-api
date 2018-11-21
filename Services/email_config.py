@@ -3,7 +3,7 @@ from jinja2 import Environment, PackageLoader
 
 # Loads templates from the yourapp.templates folder
 env = Environment(loader=PackageLoader('Controllers', 'templates'))
-class Email(object):  
+class Email(object):
     def __init__(self, to, subject):
         self.to = to
         self.subject = subject
@@ -25,7 +25,7 @@ class Email(object):
         body = self._html
 
         if not from_addr:
-            from_addr = 'achantasairohith@gmail.com'
+            from_addr = 'reach.course360@gmail.com'
         if not self._html and not self._text:
             raise Exception('You must provide a text or html body.')
         if not self._html:
@@ -33,7 +33,7 @@ class Email(object):
 
         connection = boto.ses.connect_to_region(
             'us-east-1',
-            aws_access_key_id='AKIAJAR4RJMB6DDV6HEA', 
+            aws_access_key_id='AKIAJAR4RJMB6DDV6HEA',
             aws_secret_access_key='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'
         )
 
