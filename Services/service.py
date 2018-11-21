@@ -12,6 +12,30 @@ import datetime
 class Service:
 
 	@staticmethod
+	def send_receipt(email):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				query = "SELECT users.first_name FROM users WHERE users.email LIKE %s"
+				cur.execute(query, (email,))
+				result = cur.fetchone()
+				print(result)
+				email = Email(to=email, subject='Payment Confirmation Receipt')
+				ctx = {'username': result[0],'purpose':"Your payment is successful."}
+				email.html('receipt.html', ctx)
+				email.send()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return e
+
+	@staticmethod
 	def personal_details(users):
 		conn = None
 		cur = None
