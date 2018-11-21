@@ -14,6 +14,24 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 # app = Flask(__name__)
 # app.config.from_object(__name__)
+@app.route("/deleteComment", methods=['POST'])
+def delete_comment():
+	data = request.json
+	try:
+		token = request.headers.get('Authorization')
+		if(Service.auth_token(token)):
+			if(data['role_id'] == str(1)):
+				response = Service.delete_comment(data['comment_id'],data['course_id'])
+				if( response == True):
+					return jsonify({'data': data}), 200
+				else:
+					return jsonify({'Error':'Something went wrong'}), 500
+			else:
+				return jsonify({'Error': 'Unauthorized'}), 500
+		else:
+			return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
 
 @app.route("/sendReceipt/email/<email>", methods=['GET'])
 def send_receipt(email):
