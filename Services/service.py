@@ -12,6 +12,26 @@ import datetime
 class Service:
 
 	@staticmethod
+	def delete_comment(comment_id,course_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				delete_query = "DELETE FROM course_comments WHERE  course_comments.comment_id = %s \
+				and course_comments.course_id = %s"
+				cur.execute(delete_query, (comment_id,course_id,))
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return "Unable to connect"
+		except Exception as e:
+			return  e
+
+	@staticmethod
 	def send_receipt(email):
 		conn = None
 		cur = None
