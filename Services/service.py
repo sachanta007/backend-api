@@ -257,6 +257,9 @@ class Service:
 				courses['days'], courses['department'], courses['course_code'], courses['course_id'], ));
 				if(courses['image']):
 					AwsImageHandler.upload_image(courses["image"], str(courses['course_id'])+".jpg")
+					update_course = "UPDATE courses SET image = %s WHERE course_id = %s"
+					cur.execute(update_course, ("https://s3.amazonaws.com/course-360/"+str(courses['course_id'])+".jpg",  courses['course_id'],))
+					conn.commit()
 				conn.commit()
 				cur.close()
 				conn.close()
