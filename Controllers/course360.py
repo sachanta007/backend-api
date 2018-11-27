@@ -14,6 +14,23 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 # app = Flask(__name__)
 # app.config.from_object(__name__)
+
+@app.route("/semesters", methods=['GET'])
+def semesters():
+	data = request.json
+	try:
+		token = request.headers.get('Authorization')
+		if(Service.auth_token(token)):
+			response = Service.semesters()
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({'Error':'Something went wrong'}), 500
+		else:
+			return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 @app.route("/deleteComment", methods=['POST'])
 def delete_comment():
 	data = request.json
@@ -423,14 +440,14 @@ def get_cart(id):
 	except Exception as e:
 		return jsonify(e), 500
 
-@app.route('/delete/course/<course>/fromCart/for/user/<user>')
+@app.route('/delete/course/<course>/fromCart/for/user/<user>/sem/<sem>')
 @cross_origin()
-def delete_from_cart(course, user):
+def delete_from_cart(course, user, sem):
 	auth_header = request.headers.get('Authorization')
 	try:
 		status = Jwt.decode_auth_token(auth_header)
 		if(status):
-			response = Service.delete_from_cart(course, user)
+			response = Service.delete_from_cart(course, user, sem)
 			if(response):
 				return jsonify({"response": "Success"}), 200
 			else:

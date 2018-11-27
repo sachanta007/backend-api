@@ -6,10 +6,41 @@ from Services.aws_image import AwsImageHandler
 from Models.User import User
 from Models.Course import Course
 from Models.Payment import Payment
+from Models.semester_details import SemesterDetails
 from random import randint
 import datetime
 
 class Service:
+
+	@staticmethod
+	def semesters():
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				select_query = "SELECT id, name, registration_start_date, registration_end_date, payment_end_date FROM semester_details"
+				cur.execute(select_query)
+				result = cur.fetchall()
+				sem_list = []
+				if(len(result)):
+					for obj in result:
+						sem = SemesterDetails()
+						sem.sem_id = obj[0]
+						sem.name = obj[1]
+						sem.registration_start_date = obj[2]
+						sem.registration_end_date = obj[3]
+						sem.payment_end_date = obj[4]
+						sem_list.append(sem)
+
+				cur.close()
+				conn.close()
+				return sem_list
+			else:
+				return FALSE
+		except Exception as e:
+			return  e
 
 	@staticmethod
 	def delete_comment(comment_id,course_id):
@@ -711,8 +742,8 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				insert_query = "INSERT INTO cart(user_id, course_id) VALUES (%s, %s)"
-				cur.execute(insert_query, (course['user_id'], course['course_id'],));
+				insert_query = "INSERT INTO cart(user_id, course_id, sem_id) VALUES (%s, %s, %s)"
+				cur.execute(insert_query, (course['user_id'], course['course_id'], course['sem_id']));
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -732,8 +763,10 @@ class Service:
 				cur = conn.cursor()
 				query = "SELECT courses.course_id,courses.course_name, courses.description, \
 				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
-				courses.days, courses.department, courses.course_code, courses.image FROM courses WHERE \
-				course_id IN (SELECT course_id FROM cart WHERE user_id = %s AND enrolled = 'false')"
+				courses.days, courses.department, courses.course_code, courses.image, sd.name, \
+				sd.registration_start_date, sd.registration_end_date, sd.payment_end_date FROM courses,\
+				(SELECT sem_id, course_id FROM cart WHERE user_id = 26) as cart, semester_details as sd\
+				WHERE courses.course_id = cart.course_id AND sd.id = cart.sem_id;"
 				cur.execute(query, (id,))
 				courses = cur.fetchall()
 				course_list = []
@@ -752,6 +785,12 @@ class Service:
 						course.course_code = response[9]
 						course.user_id = id
 						course.image = response[10]
+						sem = SemesterDetails()
+						sem.sem_name = response[11]
+						sem.registration_start_date = response[12]
+						sem.registration_end_date = response[13]
+						sem.payment_end_date = response[13]
+						course.sem = sem
 						course_list.append(course)
 				else:
 					return []
@@ -762,15 +801,15 @@ class Service:
 			return e
 
 	@staticmethod
-	def delete_from_cart(course_id, user_id):
+	def delete_from_cart(course_id, user_id, sem_id):
 		conn = None
 		cur = None
 		try:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				delete_query = "DELETE FROM cart WHERE cart.course_id = %s AND cart.user_id = %s"
-				cur.execute(delete_query, (course_id, user_id,));
+				delete_query = "DELETE FROM cart WHERE cart.course_id = %s AND cart.user_id = %s AND cart.sem_id = %s"
+				cur.execute(delete_query, (course_id, user_id, sem_id));
 				conn.commit()
 				cur.close()
 				conn.close()
