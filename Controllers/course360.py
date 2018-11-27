@@ -52,6 +52,7 @@ def personal_details():
 		if(Service.auth_token(token)):
 			response = Service.personal_details(data)
 			if( response == True):
+				data['image'] = "https://s3.amazonaws.com/course-360/u"+str(data['userId'])+".jpg"
 				return jsonify({'data': data}), 200
 			else:
 				return jsonify({'Error':'Something went wrong'}), 500

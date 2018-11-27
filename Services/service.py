@@ -62,13 +62,14 @@ class Service:
 		try:
 			conn = PgConfig.db()
 			if(conn):
+				AwsImageHandler.upload_image(users['image'], "u"+str(users['userId'])+".jpg")
 				cur = conn.cursor()
 				update_query = "UPDATE users SET first_name = %s, middle_name = %s, last_name = %s, dob = %s,\
 				gender = %s, permanent_address = %s, present_address = %s, alt_email = %s, phone= %s , cgpa = %s, \
-				course = %s WHERE  users.user_id = %s"
+				course = %s, image = %s WHERE  users.user_id = %s"
 				cur.execute(update_query, (users['firstName'], users['middleName'], users['lastName'], users['dob'],\
 				users['gender'],users['permanentAddress'], users['presentAddress'], users['altEmail'], users['phone'],\
-				users['cgpa'], users['course'],users['userId'], ));
+				users['cgpa'], users['course'],"https://s3.amazonaws.com/course-360/u"+str(users['userId'])+".jpg",users['userId'], ));
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -276,6 +277,9 @@ class Service:
 				courses['days'], courses['department'], courses['course_code'], courses['course_id'], ));
 				if(courses['image']):
 					AwsImageHandler.upload_image(courses["image"], str(courses['course_id'])+".jpg")
+					update_course = "UPDATE courses SET image = %s WHERE course_id = %s"
+					cur.execute(update_course, ("https://s3.amazonaws.com/course-360/"+str(courses['course_id'])+".jpg",  courses['course_id'],))
+					conn.commit()
 				conn.commit()
 				cur.close()
 				conn.close()
