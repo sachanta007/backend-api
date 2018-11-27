@@ -110,3 +110,5 @@ CREATE TABLE IF NOT EXISTS cart(
   sem_id INTEGER,
   PRIMARY KEY(course_id, user_id, sem_id)
 );
+
+ALTER TABLE enrolled_courses ADD COLUMN sem_id INTEGER DEFAULT 1;
