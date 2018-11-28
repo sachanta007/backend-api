@@ -43,6 +43,35 @@ class Service:
 			return  e
 
 	@staticmethod
+	def get_sem_by(sem_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				select_query = "SELECT id, name, registration_start_date, registration_end_date, payment_end_date FROM semester_details\
+				WHERE id = %s"
+				cur.execute(select_query,(sem_id,))
+				obj = cur.fetchone()
+				sem = SemesterDetails()
+
+				if(len(obj)):
+					sem.sem_id = obj[0]
+					sem.name = obj[1]
+					sem.registration_start_date = obj[2]
+					sem.registration_end_date = obj[3]
+					sem.payment_end_date = obj[4]
+
+				cur.close()
+				conn.close()
+				return sem
+			else:
+				return FALSE
+		except Exception as e:
+			return  e
+
+	@staticmethod
 	def delete_comment(comment_id,course_id):
 		conn = None
 		cur = None
@@ -73,7 +102,6 @@ class Service:
 				query = "SELECT users.first_name FROM users WHERE users.email LIKE %s"
 				cur.execute(query, (email,))
 				result = cur.fetchone()
-				print(result)
 				email = Email(to=email, subject='Payment Confirmation Receipt')
 				ctx = {'username': result[0],'purpose':"Your payment is successful."}
 				email.html('receipt.html', ctx)
@@ -118,13 +146,14 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				select_query = "SELECT course_id FROM enrolled_courses WHERE enrolled_courses.user_id = %s"
+				select_query = "SELECT course_id, sem_id FROM enrolled_courses WHERE enrolled_courses.user_id = %s"
 				cur.execute(select_query, (user_id,))
 				response = cur.fetchall()
 				courses_list=[]
 				if(len(response)):
 					for course in response:
-						courses_list.append(Service.get_course_by_id(course[0]))
+						courses_list.append(Service.get_course_by_id(course[0], course[1]))
+
 					cur.close()
 					conn.close()
 					return courses_list
@@ -136,7 +165,7 @@ class Service:
 			return  e
 
 	@staticmethod
-	def delete_enrolled_course(user_id, course_id):
+	def delete_enrolled_course(user_id, course_id, sem_id):
 		conn = None
 		cur = None
 		try:
@@ -144,8 +173,8 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				delete_query = "DELETE FROM enrolled_courses WHERE enrolled_courses.user_id = %s \
-				and enrolled_courses.course_id = %s"
-				cur.execute(delete_query, (user_id,course_id,))
+				and enrolled_courses.course_id = %s and enrolled_courses.sem_id = %s"
+				cur.execute(delete_query, (user_id,course_id,sem_id,))
 
 				conn.commit()
 				cur.close()
@@ -195,13 +224,14 @@ class Service:
 		conn = None
 		cur = None
 		user_id = data['user_id']
+		sem_id = data['sem_id']
 		try:
 			conn = PgConfig.db()
 			if(conn):
 				payment = Payment()
 				cur = conn.cursor()
-				query = "SELECT cart.course_id from cart WHERE user_id = %s AND enrolled = 'false'"
-				cur.execute(query,(user_id,))
+				query = "SELECT cart.course_id, cart.sem_id from cart WHERE user_id = %s AND enrolled = 'false' AND sem_id = %s"
+				cur.execute(query,(user_id, sem_id,))
 				courses = cur.fetchall()
 				course_status=[]
 				for i in range(0, len(courses)-1):
@@ -213,11 +243,11 @@ class Service:
 					return False
 				else:
 					for course in courses:
-						insert_query = "INSERT INTO enrolled_courses(user_id, course_id) VALUES(%s, %s)"
-						cur.execute(insert_query, (user_id, course[0],))
+						insert_query = "INSERT INTO enrolled_courses(user_id, course_id, sem_id) VALUES(%s, %s, %s)"
+						cur.execute(insert_query, (user_id, course[0], course[1]))
 						conn.commit()
-						delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s"
-						cur.execute(delete_from_cart_table, (course[0], user_id,))
+						delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s and sem_id = %s"
+						cur.execute(delete_from_cart_table, (course[0], user_id,sem_id,))
 						conn.commit()
 					payment.cost = 1300 * len(courses)
 					finanical_aid_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
@@ -932,7 +962,7 @@ class Service:
 			return e
 
 	@staticmethod
-	def get_course_by_id(course_id):
+	def get_course_by_id(course_id, sem_id):
 		conn = None
 		cur = None
 		try:
@@ -958,6 +988,7 @@ class Service:
 					course.course_code = obj[9]
 					course.start_dates =Service.get_start_dates(obj[7])
 					course.image = obj[10]
+					course.sem = Service.get_sem_by(sem_id)
 					cur.close()
 					conn.close()
 					return course
@@ -1084,7 +1115,7 @@ class Service:
 				query = "select user_id from enrolled_courses where course_id = %s"
 				cur.execute(query, (id,))
 				students = cur.fetchall()
-				course = Service.get_course_by_id(id)
+				course = Service.get_course_by_id(id, None)
 				students_list = []
 				if(len(students)):
 					for student in students:
