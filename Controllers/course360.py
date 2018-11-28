@@ -96,14 +96,14 @@ def get_enrolled_courses(user_id):
 		return jsonify(e), 500
 
 
-@app.route('/dropCourse/courseId/<course_id>/userId/<user_id>',methods=['GET'])
-def drop_course(course_id, user_id):
+@app.route('/dropCourse/courseId/<course_id>/userId/<user_id>/sem/<sem>',methods=['GET'])
+def drop_course(course_id, user_id,sem):
 	auth_header = request.headers.get('Authorization')
 	data = request.json
 	try:
 		status = Jwt.decode_auth_token(auth_header)
 		if(status):
-			response = Service.delete_enrolled_course(user_id, course_id)
+			response = Service.delete_enrolled_course(user_id, course_id,sem)
 			if(response):
 				return  jsonify({'Success':"Dropped the course"}), 200
 			else:
@@ -176,7 +176,6 @@ def delete_courses():
 		if(Service.auth_token(token)):
 			if(data['role_id'] == str(1)):
 				response = Service.delete_courses(data)
-				print(response)
 				if( response == True):
 					return jsonify({'data': data}), 200
 				else:
@@ -196,7 +195,6 @@ def update_courses():
 		if(Service.auth_token(token)):
 			if(data['role_id'] == str(1)):
 				response = Service.update_courses(data)
-				print(response)
 				if( response == True):
 					return jsonify({'data': data}), 200
 				else:
