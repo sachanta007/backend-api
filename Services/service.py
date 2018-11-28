@@ -332,15 +332,21 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				update_query = "UPDATE courses SET course_name = %s, description = %s, prof_id = %s, location = %s,\
-				start_time = %s, end_time = %s, days = %s, department = %s, course_code= %s WHERE  courses.course_id = %s"
+				start_time = %s, end_time = %s, days = %s, department = %s, course_code= %s WHERE  courses.course_id = %s\
+				RETURNING courses.image"
 				cur.execute(update_query, (courses['course_name'], courses['description'], \
 				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
 				courses['days'], courses['department'], courses['course_code'], courses['course_id'], ));
+				old_img = cur.fetchone()[0]
+				update_course = "UPDATE courses SET image = %s WHERE course_id = %s"
 				if(courses['image']):
 					AwsImageHandler.upload_image(courses["image"], str(courses['course_id'])+".jpg")
-					update_course = "UPDATE courses SET image = %s WHERE course_id = %s"
 					cur.execute(update_course, ("https://s3.amazonaws.com/course-360/"+str(courses['course_id'])+".jpg",  courses['course_id'],))
 					conn.commit()
+				elif(not old_img):
+					cur.execute(update_course, ("https://s3.amazonaws.com/course-360/cd.png",  courses['course_id'],))
+					conn.commit()
+
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -369,9 +375,12 @@ class Service:
 				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
 				courses['days'], courses['department'], courses['course_code'],));
 				course_id = cur.fetchone()[0]
-				AwsImageHandler.upload_image(courses["image"], str(course_id)+".jpg")
+				img = "https://s3.amazonaws.com/course-360/cd.png"
+				if('image' in courses and courses['image']):
+					AwsImageHandler.upload_image(courses["image"], str(course_id)+".jpg")
+					img = "https://s3.amazonaws.com/course-360/"+str(course_id)+".jpg"
 				update_course = "UPDATE courses SET image = %s WHERE course_id = %s"
-				cur.execute(update_course, ("https://s3.amazonaws.com/course-360/"+str(course_id)+".jpg", course_id,))
+				cur.execute(update_course, (img, course_id,))
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -392,9 +401,9 @@ class Service:
 				password = Crypto.encrypted_string(user['password'])
 
 				register_query = "INSERT INTO users(first_name,last_name, email, password, \
-				security_question, security_answer, status) VALUES (%s, %s, %s, %s,%s,%s, %s) RETURNING user_id"
+				security_question, security_answer, status, image) VALUES (%s, %s, %s, %s,%s,%s, %s, %s) RETURNING user_id"
 				cur.execute(register_query, (user['firstName'], user['lastName'], \
-					user['email'], password, user['securityQuestion'], user['securityAnswer'], 'deactive'));
+					user['email'], password, user['securityQuestion'], user['securityAnswer'], 'deactive', "https://s3.amazonaws.com/course-360/user.jpg"));
 				user_id = cur.fetchone()[0]
 				add_role_query = "INSERT INTO user_role(user_id, role_id) VALUES (%s, %s)"
 				cur.execute(add_role_query, (user_id, user['role'],))
@@ -464,7 +473,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				login_query = "SELECT users.otp, users.user_id, users.first_name, users.last_name, users.color_theme\
+				login_query = "SELECT users.otp, users.user_id, users.first_name, users.last_name, users.color_theme, users.image\
 				FROM users WHERE users.email LIKE %s"
 				cur.execute(login_query, (data['email'], ))
 				user = cur.fetchone()
@@ -475,6 +484,7 @@ class Service:
 					response.first_name = user[2]
 					response.last_name = user[3]
 					response.color_theme = user[4]
+					response.image = user[5]
 					get_role_query = "SELECT user_role.role_id FROM user_role WHERE user_role.user_id = %s"
 					cur.execute(get_role_query, (user[1],))
 					response.role_id = cur.fetchone()[0]
@@ -618,7 +628,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT users.first_name, users.last_name, users.email, users.user_id, users.color_theme FROM users,\
+				query = "SELECT users.first_name, users.last_name, users.email, users.user_id, users.color_theme, users.image FROM users,\
 				(SELECT user_id FROM user_role WHERE role_id = %s) AS user_role \
 				WHERE users.user_id = user_role.user_id ORDER BY users.user_id LIMIT %s OFFSET %s"
 				cur.execute(query, (role_id, end, start,))
@@ -632,6 +642,7 @@ class Service:
 						user.email = response[2]
 						user.user_id = response[3]
 						user.color_theme = response[4]
+						user.image = response[5]
 						user_list.append(user)
 				else:
 					return False
@@ -650,7 +661,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT users.first_name, users.last_name, users.email, users.color_theme FROM users WHERE users.user_id = %s"
+				query = "SELECT users.first_name, users.last_name, users.email, users.color_theme, users.image FROM users WHERE users.user_id = %s"
 				cur.execute(query, (id,))
 				obj = cur.fetchone()
 				user =User()
@@ -659,6 +670,7 @@ class Service:
 					user.last_name = obj[1]
 					user.email = obj[2]
 					user.color_theme = obj[3]
+					user.image = obj[4]
 					user.user_id = id
 				else:
 					return False
@@ -885,7 +897,7 @@ class Service:
 				comment_list =[]
 				for comment in comments:
 					user = User()
-					query = "SELECT first_name, last_name, email, user_id, color_theme FROM users WHERE user_id = %s"
+					query = "SELECT first_name, last_name, email, user_id, color_theme, image FROM users WHERE user_id = %s"
 					cur.execute(query, (comment[1], ))
 					response = cur.fetchone()
 					user = User()
@@ -896,6 +908,7 @@ class Service:
 					user.comment= comment[0]
 					user.rating = comment[2]
 					user.color_theme = response[4]
+					user.image = response[5]
 					comment_list.append(user)
 
 				cur.close()
@@ -995,7 +1008,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				select_query = "SELECT user_id, first_name, color_theme FROM users WHERE email LIKE %s AND type = %s"
+				select_query = "SELECT user_id, first_name, color_theme, image FROM users WHERE email LIKE %s AND type = %s"
 				cur.execute(select_query, (email, 'fb', ));
 				obj = cur.fetchone()
 				response = User()
@@ -1008,6 +1021,7 @@ class Service:
 					response.role_id = role[0]
 					response.first_name = obj[1]
 					response.color_theme = obj[2]
+					response.image = obj[3]
 					response.token = (Jwt.encode_auth_token(user_id=obj[0], role_id=response.role_id)).decode()
 					cur.close()
 					conn.close()
