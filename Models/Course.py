@@ -14,3 +14,4 @@ class Course:
         self.comment = None
         self.students = None
         self.image = None
+        self.sem = None

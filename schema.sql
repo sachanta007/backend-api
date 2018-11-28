@@ -92,3 +92,21 @@ ADD COLUMN alt_email VARCHAR(20),
 ADD COLUMN phone INTEGER,
 ADD COLUMN cgpa INTEGER,
 ADD COLUMN course VARCHAR(10);​
+
+-- Sprint-5 queries
+CREATE TABLE IF NOT EXISTS semester_details(
+  id SERIAL PRIMARY KEY,
+  name  VARCHAR(50),
+  registration_start_date DATE,
+  registration_end_date DATE,
+  payment_end_date  DATE
+);
+
+DROP table cart;
+CREATE TABLE IF NOT EXISTS cart(
+  cart_id SERIAL,
+  course_id INTEGER,
+  user_id INTEGER,
+  sem_id INTEGER,
+  PRIMARY KEY(course_id, user_id, sem_id)
+);
