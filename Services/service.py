@@ -302,15 +302,21 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				update_query = "UPDATE courses SET course_name = %s, description = %s, prof_id = %s, location = %s,\
-				start_time = %s, end_time = %s, days = %s, department = %s, course_code= %s WHERE  courses.course_id = %s"
+				start_time = %s, end_time = %s, days = %s, department = %s, course_code= %s WHERE  courses.course_id = %s\
+				RETURNING courses.image"
 				cur.execute(update_query, (courses['course_name'], courses['description'], \
 				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
 				courses['days'], courses['department'], courses['course_code'], courses['course_id'], ));
+				old_img = cur.fetchone()[0]
+				update_course = "UPDATE courses SET image = %s WHERE course_id = %s"
 				if(courses['image']):
 					AwsImageHandler.upload_image(courses["image"], str(courses['course_id'])+".jpg")
-					update_course = "UPDATE courses SET image = %s WHERE course_id = %s"
 					cur.execute(update_course, ("https://s3.amazonaws.com/course-360/"+str(courses['course_id'])+".jpg",  courses['course_id'],))
 					conn.commit()
+				elif(not old_img):
+					cur.execute(update_course, ("https://s3.amazonaws.com/course-360/cd.png",  courses['course_id'],))
+					conn.commit()
+
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -339,9 +345,12 @@ class Service:
 				courses['prof_id'], courses['location'], courses['start_time'], courses['end_time'], \
 				courses['days'], courses['department'], courses['course_code'],));
 				course_id = cur.fetchone()[0]
-				AwsImageHandler.upload_image(courses["image"], str(course_id)+".jpg")
+				img = "https://s3.amazonaws.com/course-360/cd.png"
+				if('image' in courses and courses['image']):
+					AwsImageHandler.upload_image(courses["image"], str(course_id)+".jpg")
+					img = "https://s3.amazonaws.com/course-360/"+str(course_id)+".jpg"
 				update_course = "UPDATE courses SET image = %s WHERE course_id = %s"
-				cur.execute(update_course, ("https://s3.amazonaws.com/course-360/"+str(course_id)+".jpg", course_id,))
+				cur.execute(update_course, (img, course_id,))
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -549,7 +558,6 @@ class Service:
 			else:
 				return "Unable to connect"
 		except Exception as e:
-			print(e)
 			return e
 		finally:
 				cur.close()
