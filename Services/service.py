@@ -628,9 +628,9 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT users.first_name, users.last_name, users.email, users.user_id, users.color_theme, users.image FROM users,\
-				(SELECT user_id FROM user_role WHERE role_id = %s) AS user_role \
-				WHERE users.user_id = user_role.user_id ORDER BY users.user_id LIMIT %s OFFSET %s"
+				query = "SELECT users.first_name, users.last_name, users.email, users.user_id, users.color_theme,\
+				users.image, users.finanical_aid, users.cgpa FROM users, (SELECT user_id FROM user_role WHERE role_id = %s)\
+				AS user_role WHERE users.user_id = user_role.user_id ORDER BY users.user_id LIMIT %s OFFSET %s"
 				cur.execute(query, (role_id, end, start,))
 				users = cur.fetchall()
 				user_list = []
@@ -639,10 +639,13 @@ class Service:
 						user = User()
 						user.first_name = response[0]
 						user.last_name = response[1]
+						user.full_name = str(response[0])+' '+str(response[1])
 						user.email = response[2]
 						user.user_id = response[3]
 						user.color_theme = response[4]
 						user.image = response[5]
+						user.finanical_aid = response[6]
+						user.cgpa = response[7]
 						user_list.append(user)
 				else:
 					return False
