@@ -4,3 +4,4 @@ class Payment:
         self.cost = None
         self.late_reg_penality = None
         self.late_payment_penality = None
+        self.courses = None

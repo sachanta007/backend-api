@@ -14,6 +14,27 @@ from datetime import datetime as dt
 class Service:
 
 	@staticmethod
+	def pay_fee(data):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				udpate_query = "UPDATE enrolled_courses SET payment = 'true' WHERE user_id = %s AND course_id IN %s"
+				cur.execute(udpate_query,(data['user_id'],tuple(data['courses']),))
+				udpate_query = "UPDATE users SET finanical_aid = 0 WHERE user_id = %s"
+				cur.execute(udpate_query,(data['user_id'],))
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return False
+		except Exception as e:
+			return  e
+
+	@staticmethod
 	def get_payment_details(user_id):
 		conn = None
 		cur = None
@@ -21,17 +42,19 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				select_query = "SELECT penality, sem_id FROM enrolled_courses WHERE user_id = %s AND payment = %s"
+				select_query = "SELECT penality, sem_id, course_id FROM enrolled_courses WHERE user_id = %s AND payment = %s"
 				cur.execute(select_query,(user_id,'false',))
 				result = cur.fetchall()
 				payment = Payment()
 				payment.cost = 1300*len(result)
 				payment.late_reg_penality =0
 				payment.late_payment_penality =0
+				courses = []
 				if(len(result)):
 					current_date = datetime.datetime.now()
 					for obj in result:
 						payment.late_reg_penality+=obj[0]
+						courses.append(obj[2])
 						sem_details = Service.get_sem_by(obj[1])
 						end_date = dt.strptime(str(sem_details.payment_end_date), '%Y-%m-%d')
 						if(current_date>end_date):
@@ -39,13 +62,14 @@ class Service:
 					select_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
 					cur.execute(select_query, (user_id,))
 					payment.finanical_aid=cur.fetchone()[0]
+					payment.courses = courses
 					cur.close()
 					conn.close()
 					return payment
 				else:
-					return FALSE
+					return False
 			else:
-				return FALSE
+				return False
 		except Exception as e:
 			return  e
 
@@ -75,7 +99,7 @@ class Service:
 				conn.close()
 				return sem_list
 			else:
-				return FALSE
+				return False
 		except Exception as e:
 			return  e
 
@@ -104,7 +128,7 @@ class Service:
 				conn.close()
 				return sem
 			else:
-				return FALSE
+				return False
 		except Exception as e:
 			return  e
 

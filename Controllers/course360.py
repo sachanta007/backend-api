@@ -15,6 +15,22 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 # app = Flask(__name__)
 # app.config.from_object(__name__)
 
+@app.route("/payfee", methods=['POST'])
+def pay_fee():
+	data = request.json
+	try:
+		token = request.headers.get('Authorization')
+		if(Service.auth_token(token)):
+			response = Service.pay_fee(data)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
+			else:
+				return jsonify({'Error':'Something went wrong'}), 500
+		else:
+			return jsonify({'Error': 'Unauthorized'}), 500
+	except Exception as e:
+		return jsonify(e), 500
+
 @app.route("/getPaymentDetails/user/<user_id>", methods=['GET'])
 def get_payment_details(user_id):
 	data = request.json
