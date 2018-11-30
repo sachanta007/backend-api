@@ -646,7 +646,11 @@ class Service:
 						user = User()
 						user.first_name = response[0]
 						user.last_name = response[1]
-						user.full_name = str(response[0])+' '+str(response[1])
+						user.full_name = ''
+						if(response[0]):
+							user.full_name = user.full_name + str(response[0])
+						if(response[1]):
+							user.full_name = user.full_name+' '+str(response[1])
 						user.email = response[2]
 						user.user_id = response[3]
 						user.color_theme = response[4]
