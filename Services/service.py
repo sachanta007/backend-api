@@ -253,10 +253,13 @@ class Service:
 					sem_details = Service.get_sem_by(sem_id)
 					end_date = dt.strptime(str(sem_details.registration_end_date), '%Y-%m-%d')
 					current_date = datetime.datetime.now()
-					payment.late_reg_penality =0
+					payment.late_reg_penality = 0
+					payment.late_payment_penality = 0
 					if(current_date>end_date):
-						payment.late_reg_penality = 15*(abs((current_date-end_date).days))
-
+						payment.late_reg_penality = 2*(abs((current_date-end_date).days))
+					end_date = dt.strptime(str(sem_details.payment_end_date), '%Y-%m-%d')
+					if(current_date>end_date):
+						payment.late_payment_penality = 5*(abs((current_date-end_date).days))
 					for course in courses:
 						insert_query = "INSERT INTO enrolled_courses(user_id, course_id, sem_id, penality) VALUES(%s, %s, %s, %s)"
 						cur.execute(insert_query, (user_id, course[0], course[1], payment.late_reg_penality,))
