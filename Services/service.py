@@ -129,7 +129,7 @@ class Service:
 			return  e
 
 	@staticmethod
-	def send_receipt(email):
+	def send_receipt(email, cost, faid, reg, pay):
 		conn = None
 		cur = None
 		try:
@@ -140,7 +140,15 @@ class Service:
 				cur.execute(query, (email,))
 				result = cur.fetchone()
 				email = Email(to=email, subject='Payment Confirmation Receipt')
-				ctx = {'username': result[0],'purpose':"Your payment is successful."}
+				ctx = {
+					'username': result[0],
+					'purpose':"Your payment is successful.",
+					'cost':cost,
+					'faid':faid,
+					'reg': reg,
+					'pay': pay,
+					'total':int(cost)+int(reg)+int(pay)-int(faid)
+					}
 				email.html('receipt.html', ctx)
 				email.send()
 				cur.close()
@@ -149,6 +157,7 @@ class Service:
 			else:
 				return "Unable to connect"
 		except Exception as e:
+			print(e)
 			return e
 
 	@staticmethod

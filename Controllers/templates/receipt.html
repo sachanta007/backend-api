@@ -1,10 +1,33 @@
 <html>
+<head>
+  <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-<body>
-<Text>Hi {{username}},</Text><br/>
-<p>
-<Text>{{purpose}}</Text><br/>
-<Text>Happy Learning!!!</Text><br/>
-</p>
-</body>
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <body class= "column">
+    <div class="col-sm-6"><br/>
+      <label class="text-left">Hi {{username}},</label><br/>
+      <label class="text-left">{{purpose}}</label><br/><br/>
+      <table class="table table-hover table-bordered table-striped">
+        <thead>
+            <th>Item</th><th>Amount</th>
+        </thead>
+        <tbody>
+          <tr class="success"><td>Courses Cost</td><td>{{cost}}</td></tr>
+          <tr class="danger"><td>Late Registration Penalty</td><td>{{reg}}</td></tr>
+          <tr class="danger"><td>Late Payment Penalty</td><td>{{pay}}</td></tr>
+          <tr class="info"><td>Financial Aid</td><td>-{{faid}}</td></tr>
+          <tr><td>Total</td><td>{{total}}</td></tr>
+        </tbody>
+      </table><br/>
+      <label>Happy Learning!</label><br/>
+      <label>Team Course360</label><br/>
+    </div>
+  </body>
 </html>​

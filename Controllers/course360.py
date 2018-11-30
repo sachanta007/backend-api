@@ -66,10 +66,10 @@ def delete_comment():
 	except Exception as e:
 		return jsonify(e), 500
 
-@app.route("/sendReceipt/email/<email>", methods=['GET'])
-def send_receipt(email):
+@app.route("/sendReceipt/email/<email>/cost/<cost>/fiAid/<faid>/reg/<reg>/pay/<pay>", methods=['GET'])
+def send_receipt(email, cost, faid, reg, pay):
 	try:
-		response = Service.send_receipt(email)
+		response = Service.send_receipt(email, cost, faid, reg, pay)
 		if( response == True):
 			return jsonify({'email': email}), 200
 		else:
