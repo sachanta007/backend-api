@@ -14,6 +14,42 @@ from datetime import datetime as dt
 class Service:
 
 	@staticmethod
+	def get_payment_details(user_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				select_query = "SELECT penality, sem_id FROM enrolled_courses WHERE user_id = %s AND payment = %s"
+				cur.execute(select_query,(user_id,'false',))
+				result = cur.fetchall()
+				payment = Payment()
+				payment.cost = 1300*len(result)
+				payment.late_reg_penality =0
+				payment.late_payment_penality =0
+				if(len(result)):
+					current_date = datetime.datetime.now()
+					for obj in result:
+						payment.late_reg_penality+=obj[0]
+						sem_details = Service.get_sem_by(obj[1])
+						end_date = dt.strptime(str(sem_details.payment_end_date), '%Y-%m-%d')
+						if(current_date>end_date):
+							payment.late_payment_penality += 5*(abs((current_date-end_date).days))
+					select_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
+					cur.execute(select_query, (user_id,))
+					payment.finanical_aid=cur.fetchone()[0]
+					cur.close()
+					conn.close()
+					return payment
+				else:
+					return FALSE
+			else:
+				return FALSE
+		except Exception as e:
+			return  e
+
+	@staticmethod
 	def semesters():
 		conn = None
 		cur = None
@@ -834,8 +870,8 @@ class Service:
 				query = "SELECT courses.course_id,courses.course_name, courses.description, \
 				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
 				courses.days, courses.department, courses.course_code, courses.image, sd.name, \
-				sd.registration_start_date, sd.registration_end_date, sd.payment_end_date FROM courses,\
-				(SELECT sem_id, course_id FROM cart WHERE user_id = 26) as cart, semester_details as sd\
+				sd.registration_start_date, sd.registration_end_date, sd.payment_end_date, sd.id FROM courses,\
+				(SELECT sem_id, course_id FROM cart WHERE user_id = %s) as cart, semester_details as sd\
 				WHERE courses.course_id = cart.course_id AND sd.id = cart.sem_id;"
 				cur.execute(query, (id,))
 				courses = cur.fetchall()
@@ -859,7 +895,8 @@ class Service:
 						sem.sem_name = response[11]
 						sem.registration_start_date = response[12]
 						sem.registration_end_date = response[13]
-						sem.payment_end_date = response[13]
+						sem.payment_end_date = response[14]
+						sem.sem_id = response[15]
 						course.sem = sem
 						course_list.append(course)
 				else:
