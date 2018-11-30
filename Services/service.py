@@ -289,39 +289,39 @@ class Service:
 						 if(state != True):
 						 	course_status.append(state)
 
-				if(len(course_status)):
+				if(len(course_status) and len(courses)>1):
 					return course_status
+
+				payment = Payment()
+				sem_details = Service.get_sem_by(sem_id)
+				end_date = dt.strptime(str(sem_details.registration_end_date), '%Y-%m-%d')
+				current_date = datetime.datetime.now()
+				payment.late_reg_penality = 0
+				payment.late_payment_penality = 0
+				if(current_date>end_date):
+					payment.late_reg_penality = 2*(abs((current_date-end_date).days))
+				end_date = dt.strptime(str(sem_details.payment_end_date), '%Y-%m-%d')
+				if(current_date>end_date):
+					payment.late_payment_penality = 5*(abs((current_date-end_date).days))
+				for course in courses:
+					insert_query = "INSERT INTO enrolled_courses(user_id, course_id, sem_id, penality) VALUES(%s, %s, %s, %s)"
+					cur.execute(insert_query, (user_id, course[0], course[1], payment.late_reg_penality,))
+					conn.commit()
+					delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s and sem_id = %s"
+					cur.execute(delete_from_cart_table, (course[0], user_id,sem_id,))
+					conn.commit()
+				payment.cost = 1300 * len(courses)
+				finanical_aid_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
+				cur.execute(finanical_aid_query, (user_id,))
+				obj = cur.fetchone()
+				if(obj[0]):
+					payment.finanical_aid = obj[0]
 				else:
-					payment = Payment()
-					sem_details = Service.get_sem_by(sem_id)
-					end_date = dt.strptime(str(sem_details.registration_end_date), '%Y-%m-%d')
-					current_date = datetime.datetime.now()
-					payment.late_reg_penality = 0
-					payment.late_payment_penality = 0
-					if(current_date>end_date):
-						payment.late_reg_penality = 2*(abs((current_date-end_date).days))
-					end_date = dt.strptime(str(sem_details.payment_end_date), '%Y-%m-%d')
-					if(current_date>end_date):
-						payment.late_payment_penality = 5*(abs((current_date-end_date).days))
-					for course in courses:
-						insert_query = "INSERT INTO enrolled_courses(user_id, course_id, sem_id, penality) VALUES(%s, %s, %s, %s)"
-						cur.execute(insert_query, (user_id, course[0], course[1], payment.late_reg_penality,))
-						conn.commit()
-						delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s and sem_id = %s"
-						cur.execute(delete_from_cart_table, (course[0], user_id,sem_id,))
-						conn.commit()
-					payment.cost = 1300 * len(courses)
-					finanical_aid_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
-					cur.execute(finanical_aid_query, (user_id,))
-					obj = cur.fetchone()
-					if(obj[0]):
-						payment.finanical_aid = obj[0]
-					else:
-						payment.finanical_aid = Service.generate_random_number(3)
-						update_query = "UPDATE users SET finanical_aid = %s WHERE users.user_id = %s"
-						cur.execute(update_query, (payment.finanical_aid,user_id,))
-						conn.commit()
-					return payment
+					payment.finanical_aid = Service.generate_random_number(3)
+					update_query = "UPDATE users SET finanical_aid = %s WHERE users.user_id = %s"
+					cur.execute(update_query, (payment.finanical_aid,user_id,))
+					conn.commit()
+				return payment
 		except Exception as e:
 			return e
 
@@ -1138,8 +1138,8 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT courses.course_name, courses.start_time, courses.end_time, courses.location, courses.course_id, \
-				courses.prof_id, courses.days, courses.course_code, courses.department, courses.description, courses.image FROM courses, \
-				(SELECT course_id FROM enrolled_courses WHERE user_id = %s) as enrolled_courses \
+				courses.prof_id, courses.days, courses.course_code, courses.department, courses.description, courses.image, sem_id FROM courses, \
+				(SELECT course_id, sem_id FROM enrolled_courses WHERE user_id = %s) as enrolled_courses \
 				WHERE enrolled_courses.course_id = courses.course_id"
 				cur.execute(query, (id,))
 				schedules = cur.fetchall()
@@ -1162,6 +1162,7 @@ class Service:
 						course.department = schedule[8]
 						course.description = schedule[9]
 						course.image = schedule[10]
+						course.sem = Service.get_sem_by(schedule[11])
 						courses_list.append(course)
 						cur.close()
 						conn.close()
