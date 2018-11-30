@@ -173,9 +173,16 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				delete_query = "DELETE FROM enrolled_courses WHERE enrolled_courses.user_id = %s \
-				and enrolled_courses.course_id = %s and enrolled_courses.sem_id = %s"
+				and enrolled_courses.course_id = %s and enrolled_courses.sem_id = %s RETURNING payment"
 				cur.execute(delete_query, (user_id,course_id,sem_id,))
+				is_paid = cur.fetchone()[0]
+				if(is_paid == 'true'):
+					select_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
+					cur.execute(select_query, (user_id,))
+					response = cur.fetchone()
 
+					update_query = "UPDATE users SET finanical_aid=%s WHERE user_id = %s"
+					cur.execute(update_query, (int(response[0])+ 650*3, user_id))
 				conn.commit()
 				cur.close()
 				conn.close()
