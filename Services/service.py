@@ -237,10 +237,10 @@ class Service:
 		try:
 			conn = PgConfig.db()
 			cur = conn.cursor()
-			query1 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
+			query1 = "SELECT courses.days, courses.start_time, courses.end_time, courses.course_name FROM courses WHERE courses.course_id = %s"
 			cur.execute(query1,(course1,))
 			course1_days = cur.fetchone()
-			query2 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
+			query2 = "SELECT courses.days, courses.start_time, courses.end_time, courses.course_name FROM courses WHERE courses.course_id = %s"
 			cur.execute(query2,(course2,))
 			course2_days = cur.fetchone()
 			if(course1_days[0] != course2_days[0]):
@@ -253,15 +253,15 @@ class Service:
 
 				if(course1_start_time == course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
-					return False
+					return [course1_days[3], course2_days[3]]
 				elif(course2_start_time <= course1_end_time):
 					print("Timings of the selected courses clash, please select some other course")
-					return False
+					return [course1_days[3], course2_days[3]]
 				else:
 					return True
 
 		except Exception as e:
-			return e
+			return [course1, course2]
 
 	@staticmethod
 	def enroll_courses(data):
@@ -277,15 +277,22 @@ class Service:
 				query = "SELECT cart.course_id, cart.sem_id from cart WHERE user_id = %s AND enrolled = 'false' AND sem_id = %s"
 				cur.execute(query,(user_id, sem_id,))
 				courses = cur.fetchall()
+				query = "SELECT course_id from enrolled_courses WHERE user_id = %s AND sem_id = %s"
+				cur.execute(query,(user_id, sem_id,))
+				enrolled_courses = cur.fetchall()
+				courses = courses+enrolled_courses
 				course_status=[]
+
 				for i in range(0, len(courses)-1):
 					 for j in range(i+1, len(courses)):
-						 course_status.append(Service.validate_courses(courses[i][0], courses[j][0]))
+						 state = Service.validate_courses(courses[i][0], courses[j][0])
+						 if(state != True):
+						 	course_status.append(state)
 
-				payment = Payment()
-				if(False in course_status):
-					return False
+				if(len(course_status)):
+					return course_status
 				else:
+					payment = Payment()
 					sem_details = Service.get_sem_by(sem_id)
 					end_date = dt.strptime(str(sem_details.registration_end_date), '%Y-%m-%d')
 					current_date = datetime.datetime.now()
