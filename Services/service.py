@@ -9,6 +9,7 @@ from Models.Payment import Payment
 from Models.semester_details import SemesterDetails
 from random import randint
 import datetime
+from datetime import datetime as dt
 
 class Service:
 
@@ -249,9 +250,16 @@ class Service:
 				if(False in course_status):
 					return False
 				else:
+					sem_details = Service.get_sem_by(sem_id)
+					end_date = dt.strptime(str(sem_details.registration_end_date), '%Y-%m-%d')
+					current_date = datetime.datetime.now()
+					payment.late_reg_penality =0
+					if(current_date>end_date):
+						payment.late_reg_penality = 15*(abs((current_date-end_date).days))
+
 					for course in courses:
-						insert_query = "INSERT INTO enrolled_courses(user_id, course_id, sem_id) VALUES(%s, %s, %s)"
-						cur.execute(insert_query, (user_id, course[0], course[1]))
+						insert_query = "INSERT INTO enrolled_courses(user_id, course_id, sem_id, penality) VALUES(%s, %s, %s, %s)"
+						cur.execute(insert_query, (user_id, course[0], course[1], payment.late_reg_penality,))
 						conn.commit()
 						delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s and sem_id = %s"
 						cur.execute(delete_from_cart_table, (course[0], user_id,sem_id,))
