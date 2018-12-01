@@ -1,11 +1,18 @@
 <html>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<head>
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+		<!-- jQuery library -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+		<!-- Latest compiled JavaScript -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	</head>
 	<body>
-		<Text>Hi {{username}},</Text><br/>
-		<p>
-			<Text>Good to see you here.</Text><br/>
-			<Text>Please click the below button to activate your account.</Text>
-		</p><br/>
+		<label>Hi {{username}},</label><br/>
+			<label>Good to see you here.</label><br/>
+			<label>Please click the below button to activate your account.</label><br/>
 		<a href="{{url}}" class="btn btn-default">Activate</a>
 	</body>
 </html>
