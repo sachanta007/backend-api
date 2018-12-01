@@ -283,13 +283,15 @@ class Service:
 				course2_start_time = course2_days[1]
 				course1_end_time = course1_days[2]
 				course2_end_time = course2_days[2]
-
 				if(course1_start_time == course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return [course1_days[3], course2_days[3]]
 				elif(course2_start_time <= course1_end_time):
-					print("Timings of the selected courses clash, please select some other course")
-					return [course1_days[3], course2_days[3]]
+					if(course1_start_time > course2_start_time and course1_end_time > course2_end_time ):
+						return True
+					else:
+						print("Timings of the selected courses clash, please select some other course ---1")
+						return [course1_days[3], course2_days[3]]
 				else:
 					return True
 
@@ -307,18 +309,24 @@ class Service:
 			if(conn):
 				payment = Payment()
 				cur = conn.cursor()
+				courses = []
 				query = "SELECT cart.course_id, cart.sem_id from cart WHERE user_id = %s AND enrolled = 'false' AND sem_id = %s"
 				cur.execute(query,(user_id, sem_id,))
-				courses = cur.fetchall()
+				new_courses = cur.fetchall()
+				for c in new_courses:
+					courses.append(c[0])
+
 				query = "SELECT course_id from enrolled_courses WHERE user_id = %s AND sem_id = %s"
 				cur.execute(query,(user_id, sem_id,))
 				enrolled_courses = cur.fetchall()
-				courses = courses+enrolled_courses
+
+				for enrolled_course in enrolled_courses:
+					courses.append(enrolled_course[0])
 				course_status=[]
-				print("Courses => "+str(courses))
+
 				for i in range(0, len(courses)-1):
 					 for j in range(i+1, len(courses)):
-						 state = Service.validate_courses(courses[i][0], courses[j][0])
+						 state = Service.validate_courses(courses[i], courses[j])
 						 if(state != True):
 						 	course_status.append(state)
 
@@ -331,12 +339,15 @@ class Service:
 				current_date = datetime.datetime.now()
 				payment.late_reg_penality = 0
 				payment.late_payment_penality = 0
+
 				if(current_date>end_date):
 					payment.late_reg_penality = 2*(abs((current_date-end_date).days))
 				end_date = dt.strptime(str(sem_details.payment_end_date), '%Y-%m-%d')
+
 				if(current_date>end_date):
 					payment.late_payment_penality = 5*(abs((current_date-end_date).days))
-				for course in courses:
+
+				for course in new_courses:
 					insert_query = "INSERT INTO enrolled_courses(user_id, course_id, sem_id, penality) VALUES(%s, %s, %s, %s)"
 					cur.execute(insert_query, (user_id, course[0], course[1], payment.late_reg_penality,))
 					conn.commit()
