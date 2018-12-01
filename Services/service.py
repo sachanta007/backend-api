@@ -14,6 +14,66 @@ from datetime import datetime as dt
 class Service:
 
 	@staticmethod
+	def pay_fee(data):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				udpate_query = "UPDATE enrolled_courses SET payment = 'true' WHERE user_id = %s AND course_id IN %s"
+				cur.execute(udpate_query,(data['user_id'],tuple(data['courses']),))
+				udpate_query = "UPDATE users SET finanical_aid = 0 WHERE user_id = %s"
+				cur.execute(udpate_query,(data['user_id'],))
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return False
+		except Exception as e:
+			return  e
+
+	@staticmethod
+	def get_payment_details(user_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				select_query = "SELECT penality, sem_id, course_id FROM enrolled_courses WHERE user_id = %s AND payment = %s"
+				cur.execute(select_query,(user_id,'false',))
+				result = cur.fetchall()
+				payment = Payment()
+				payment.cost = 1300*len(result)
+				payment.late_reg_penality =0
+				payment.late_payment_penality =0
+				courses = []
+				if(len(result)):
+					current_date = datetime.datetime.now()
+					for obj in result:
+						payment.late_reg_penality+=obj[0]
+						courses.append(obj[2])
+						sem_details = Service.get_sem_by(obj[1])
+						end_date = dt.strptime(str(sem_details.payment_end_date), '%Y-%m-%d')
+						if(current_date>end_date):
+							payment.late_payment_penality += 5*(abs((current_date-end_date).days))
+					select_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
+					cur.execute(select_query, (user_id,))
+					payment.finanical_aid=cur.fetchone()[0]
+					payment.courses = courses
+					cur.close()
+					conn.close()
+					return payment
+				else:
+					return False
+			else:
+				return False
+		except Exception as e:
+			return  e
+
+	@staticmethod
 	def semesters():
 		conn = None
 		cur = None
@@ -39,7 +99,7 @@ class Service:
 				conn.close()
 				return sem_list
 			else:
-				return FALSE
+				return False
 		except Exception as e:
 			return  e
 
@@ -68,7 +128,7 @@ class Service:
 				conn.close()
 				return sem
 			else:
-				return FALSE
+				return False
 		except Exception as e:
 			return  e
 
@@ -93,7 +153,7 @@ class Service:
 			return  e
 
 	@staticmethod
-	def send_receipt(email):
+	def send_receipt(email, cost, faid, reg, pay):
 		conn = None
 		cur = None
 		try:
@@ -104,7 +164,15 @@ class Service:
 				cur.execute(query, (email,))
 				result = cur.fetchone()
 				email = Email(to=email, subject='Payment Confirmation Receipt')
-				ctx = {'username': result[0],'purpose':"Your payment is successful."}
+				ctx = {
+					'username': result[0],
+					'purpose':"Your payment is successful.",
+					'cost':cost,
+					'faid':faid,
+					'reg': reg,
+					'pay': pay,
+					'total':int(cost)+int(reg)+int(pay)-int(faid)
+					}
 				email.html('receipt.html', ctx)
 				email.send()
 				cur.close()
@@ -113,6 +181,7 @@ class Service:
 			else:
 				return "Unable to connect"
 		except Exception as e:
+			print(e)
 			return e
 
 	@staticmethod
@@ -201,10 +270,10 @@ class Service:
 		try:
 			conn = PgConfig.db()
 			cur = conn.cursor()
-			query1 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
+			query1 = "SELECT courses.days, courses.start_time, courses.end_time, courses.course_name FROM courses WHERE courses.course_id = %s"
 			cur.execute(query1,(course1,))
 			course1_days = cur.fetchone()
-			query2 = "SELECT courses.days, courses.start_time, courses.end_time FROM courses WHERE courses.course_id = %s"
+			query2 = "SELECT courses.days, courses.start_time, courses.end_time, courses.course_name FROM courses WHERE courses.course_id = %s"
 			cur.execute(query2,(course2,))
 			course2_days = cur.fetchone()
 			if(course1_days[0] != course2_days[0]):
@@ -217,15 +286,15 @@ class Service:
 
 				if(course1_start_time == course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
-					return False
+					return [course1_days[3], course2_days[3]]
 				elif(course2_start_time <= course1_end_time):
 					print("Timings of the selected courses clash, please select some other course")
-					return False
+					return [course1_days[3], course2_days[3]]
 				else:
 					return True
 
 		except Exception as e:
-			return e
+			return [course1, course2]
 
 	@staticmethod
 	def enroll_courses(data):
@@ -241,44 +310,51 @@ class Service:
 				query = "SELECT cart.course_id, cart.sem_id from cart WHERE user_id = %s AND enrolled = 'false' AND sem_id = %s"
 				cur.execute(query,(user_id, sem_id,))
 				courses = cur.fetchall()
+				query = "SELECT course_id from enrolled_courses WHERE user_id = %s AND sem_id = %s"
+				cur.execute(query,(user_id, sem_id,))
+				enrolled_courses = cur.fetchall()
+				courses = courses+enrolled_courses
 				course_status=[]
+
 				for i in range(0, len(courses)-1):
 					 for j in range(i+1, len(courses)):
-						 course_status.append(Service.validate_courses(courses[i][0], courses[j][0]))
+						 state = Service.validate_courses(courses[i][0], courses[j][0])
+						 if(state != True):
+						 	course_status.append(state)
+
+				if(len(course_status) and len(courses)>1):
+					return course_status
 
 				payment = Payment()
-				if(False in course_status):
-					return False
+				sem_details = Service.get_sem_by(sem_id)
+				end_date = dt.strptime(str(sem_details.registration_end_date), '%Y-%m-%d')
+				current_date = datetime.datetime.now()
+				payment.late_reg_penality = 0
+				payment.late_payment_penality = 0
+				if(current_date>end_date):
+					payment.late_reg_penality = 2*(abs((current_date-end_date).days))
+				end_date = dt.strptime(str(sem_details.payment_end_date), '%Y-%m-%d')
+				if(current_date>end_date):
+					payment.late_payment_penality = 5*(abs((current_date-end_date).days))
+				for course in courses:
+					insert_query = "INSERT INTO enrolled_courses(user_id, course_id, sem_id, penality) VALUES(%s, %s, %s, %s)"
+					cur.execute(insert_query, (user_id, course[0], course[1], payment.late_reg_penality,))
+					conn.commit()
+					delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s and sem_id = %s"
+					cur.execute(delete_from_cart_table, (course[0], user_id,sem_id,))
+					conn.commit()
+				payment.cost = 1300 * len(courses)
+				finanical_aid_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
+				cur.execute(finanical_aid_query, (user_id,))
+				obj = cur.fetchone()
+				if(obj[0]):
+					payment.finanical_aid = obj[0]
 				else:
-					sem_details = Service.get_sem_by(sem_id)
-					end_date = dt.strptime(str(sem_details.registration_end_date), '%Y-%m-%d')
-					current_date = datetime.datetime.now()
-					payment.late_reg_penality = 0
-					payment.late_payment_penality = 0
-					if(current_date>end_date):
-						payment.late_reg_penality = 2*(abs((current_date-end_date).days))
-					end_date = dt.strptime(str(sem_details.payment_end_date), '%Y-%m-%d')
-					if(current_date>end_date):
-						payment.late_payment_penality = 5*(abs((current_date-end_date).days))
-					for course in courses:
-						insert_query = "INSERT INTO enrolled_courses(user_id, course_id, sem_id, penality) VALUES(%s, %s, %s, %s)"
-						cur.execute(insert_query, (user_id, course[0], course[1], payment.late_reg_penality,))
-						conn.commit()
-						delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s and sem_id = %s"
-						cur.execute(delete_from_cart_table, (course[0], user_id,sem_id,))
-						conn.commit()
-					payment.cost = 1300 * len(courses)
-					finanical_aid_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
-					cur.execute(finanical_aid_query, (user_id,))
-					obj = cur.fetchone()
-					if(obj[0]):
-						payment.finanical_aid = obj[0]
-					else:
-						payment.finanical_aid = Service.generate_random_number(3)
-						update_query = "UPDATE users SET finanical_aid = %s WHERE users.user_id = %s"
-						cur.execute(update_query, (payment.finanical_aid,user_id,))
-						conn.commit()
-					return payment
+					payment.finanical_aid = Service.generate_random_number(3)
+					update_query = "UPDATE users SET finanical_aid = %s WHERE users.user_id = %s"
+					cur.execute(update_query, (payment.finanical_aid,user_id,))
+					conn.commit()
+				return payment
 		except Exception as e:
 			return e
 
@@ -834,8 +910,8 @@ class Service:
 				query = "SELECT courses.course_id,courses.course_name, courses.description, \
 				courses.prof_id, courses.location, courses.start_time, courses.end_time, \
 				courses.days, courses.department, courses.course_code, courses.image, sd.name, \
-				sd.registration_start_date, sd.registration_end_date, sd.payment_end_date FROM courses,\
-				(SELECT sem_id, course_id FROM cart WHERE user_id = 26) as cart, semester_details as sd\
+				sd.registration_start_date, sd.registration_end_date, sd.payment_end_date, sd.id FROM courses,\
+				(SELECT sem_id, course_id FROM cart WHERE user_id = %s) as cart, semester_details as sd\
 				WHERE courses.course_id = cart.course_id AND sd.id = cart.sem_id;"
 				cur.execute(query, (id,))
 				courses = cur.fetchall()
@@ -859,7 +935,8 @@ class Service:
 						sem.sem_name = response[11]
 						sem.registration_start_date = response[12]
 						sem.registration_end_date = response[13]
-						sem.payment_end_date = response[13]
+						sem.payment_end_date = response[14]
+						sem.sem_id = response[15]
 						course.sem = sem
 						course_list.append(course)
 				else:
@@ -1094,8 +1171,8 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT courses.course_name, courses.start_time, courses.end_time, courses.location, courses.course_id, \
-				courses.prof_id, courses.days, courses.course_code, courses.department, courses.description, courses.image FROM courses, \
-				(SELECT course_id FROM enrolled_courses WHERE user_id = %s) as enrolled_courses \
+				courses.prof_id, courses.days, courses.course_code, courses.department, courses.description, courses.image, sem_id FROM courses, \
+				(SELECT course_id, sem_id FROM enrolled_courses WHERE user_id = %s) as enrolled_courses \
 				WHERE enrolled_courses.course_id = courses.course_id"
 				cur.execute(query, (id,))
 				schedules = cur.fetchall()
@@ -1118,6 +1195,7 @@ class Service:
 						course.department = schedule[8]
 						course.description = schedule[9]
 						course.image = schedule[10]
+						course.sem = Service.get_sem_by(schedule[11])
 						courses_list.append(course)
 						cur.close()
 						conn.close()
