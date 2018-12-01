@@ -331,7 +331,10 @@ class Service:
 						 	course_status.append(state)
 
 				if(len(course_status) and len(courses)>1):
-					return course_status
+					obj = {}
+					obj['is_clash'] = True
+					obj['courses'] = course_status
+					return obj
 
 				payment = Payment()
 				sem_details = Service.get_sem_by(sem_id)
@@ -1101,7 +1104,8 @@ class Service:
 					course.course_code = obj[9]
 					course.start_dates =Service.get_start_dates(obj[7])
 					course.image = obj[10]
-					course.sem = Service.get_sem_by(sem_id)
+					if(sem_id):
+						course.sem = Service.get_sem_by(sem_id)
 					cur.close()
 					conn.close()
 					return course
