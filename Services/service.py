@@ -315,7 +315,7 @@ class Service:
 				enrolled_courses = cur.fetchall()
 				courses = courses+enrolled_courses
 				course_status=[]
-
+				print("Courses => "+str(courses))
 				for i in range(0, len(courses)-1):
 					 for j in range(i+1, len(courses)):
 						 state = Service.validate_courses(courses[i][0], courses[j][0])
