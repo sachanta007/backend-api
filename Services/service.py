@@ -14,6 +14,66 @@ from datetime import datetime as dt
 class Service:
 
 	@staticmethod
+	def get_profile_details(user_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				select_query = "SELECT first_name, last_name, email, finanical_aid, middle_name, dob, gender, permanent_address,\
+				present_address, alt_email, phone, course, image, color_theme FROM users WHERE user_id = %s"
+				cur.execute(select_query,(user_id,))
+				result = cur.fetchone()
+				user = User()
+				if(result):
+					user.first_name=result[0]
+					user.last_name=result[1]
+					user.email = result[2]
+					user.finanical_aid = result[3]
+					user.middle_name = result[4]
+					user.dob = result[5]
+					user.gender = result[6]
+					user.permanent_address = result[7]
+					user.present_address = result[8]
+					user.alt_email = result[9]
+					user.phone = result[10]
+					user.course = result[11]
+					user.image = result[12]
+					user.color_theme = result[13]
+					gpa_query = "SELECT avg(gpa) FROM enrolled_courses WHERE user_id = %s"
+					cur.execute(gpa_query, (user_id,))
+					user.cgpa = float(cur.fetchone()[0])
+					cur.close()
+					conn.close()
+					return user
+				else:
+					return False
+			else:
+				return False
+		except Exception as e:
+			return  e
+
+	@staticmethod
+	def update_gpa_by_course(courseId, userId,gpa):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				udpate_query = "UPDATE enrolled_courses SET gpa = %s WHERE user_id = %s AND course_id = %s"
+				cur.execute(udpate_query,(gpa,userId,courseId,))
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return False
+		except Exception as e:
+			return  e
+
+	@staticmethod
 	def pay_fee(data):
 		conn = None
 		cur = None
@@ -191,14 +251,19 @@ class Service:
 		try:
 			conn = PgConfig.db()
 			if(conn):
-				AwsImageHandler.upload_image(users['image'], "u"+str(users['userId'])+".jpg")
+
 				cur = conn.cursor()
 				update_query = "UPDATE users SET first_name = %s, middle_name = %s, last_name = %s, dob = %s,\
 				gender = %s, permanent_address = %s, present_address = %s, alt_email = %s, phone= %s , cgpa = %s, \
-				course = %s, image = %s WHERE  users.user_id = %s"
+				course = %s WHERE users.user_id = %s"
 				cur.execute(update_query, (users['firstName'], users['middleName'], users['lastName'], users['dob'],\
 				users['gender'],users['permanentAddress'], users['presentAddress'], users['altEmail'], users['phone'],\
-				users['cgpa'], users['course'],"https://s3.amazonaws.com/course-360/u"+str(users['userId'])+".jpg",users['userId'], ));
+				users['cgpa'], users['course'],users['userId'], ));
+				if(users['image']):
+					AwsImageHandler.upload_image(users['image'], "u"+str(users['userId'])+".jpg")
+					update_query = "UPDATE users SET image = %s WHERE user_id = %s"
+					cur.execute(update_query,("https://s3.amazonaws.com/course-360/u"+str(users['userId'])+".jpg",users['userId'],))
+					conn.commit()
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -216,13 +281,15 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				select_query = "SELECT course_id, sem_id FROM enrolled_courses WHERE enrolled_courses.user_id = %s"
+				select_query = "SELECT course_id, sem_id, gpa FROM enrolled_courses WHERE enrolled_courses.user_id = %s"
 				cur.execute(select_query, (user_id,))
 				response = cur.fetchall()
 				courses_list=[]
 				if(len(response)):
 					for course in response:
-						courses_list.append(Service.get_course_by_id(course[0], course[1]))
+						stu = Service.get_course_by_id(course[0], course[1])
+						stu.gpa = float(course[2])
+						courses_list.append(stu)
 
 					cur.close()
 					conn.close()
@@ -283,13 +350,15 @@ class Service:
 				course2_start_time = course2_days[1]
 				course1_end_time = course1_days[2]
 				course2_end_time = course2_days[2]
-
 				if(course1_start_time == course2_start_time):
 					print("Timings of the selected courses clash, please select some other course")
 					return [course1_days[3], course2_days[3]]
 				elif(course2_start_time <= course1_end_time):
-					print("Timings of the selected courses clash, please select some other course")
-					return [course1_days[3], course2_days[3]]
+					if(course1_start_time > course2_start_time and course1_end_time > course2_end_time ):
+						return True
+					else:
+						print("Timings of the selected courses clash, please select some other course ---1")
+						return [course1_days[3], course2_days[3]]
 				else:
 					return True
 
@@ -307,23 +376,32 @@ class Service:
 			if(conn):
 				payment = Payment()
 				cur = conn.cursor()
+				courses = []
 				query = "SELECT cart.course_id, cart.sem_id from cart WHERE user_id = %s AND enrolled = 'false' AND sem_id = %s"
 				cur.execute(query,(user_id, sem_id,))
-				courses = cur.fetchall()
+				new_courses = cur.fetchall()
+				for c in new_courses:
+					courses.append(c[0])
+
 				query = "SELECT course_id from enrolled_courses WHERE user_id = %s AND sem_id = %s"
 				cur.execute(query,(user_id, sem_id,))
 				enrolled_courses = cur.fetchall()
-				courses = courses+enrolled_courses
+
+				for enrolled_course in enrolled_courses:
+					courses.append(enrolled_course[0])
 				course_status=[]
 
 				for i in range(0, len(courses)-1):
 					 for j in range(i+1, len(courses)):
-						 state = Service.validate_courses(courses[i][0], courses[j][0])
+						 state = Service.validate_courses(courses[i], courses[j])
 						 if(state != True):
 						 	course_status.append(state)
 
 				if(len(course_status) and len(courses)>1):
-					return course_status
+					obj = {}
+					obj['is_clash'] = True
+					obj['courses'] = course_status
+					return obj
 
 				payment = Payment()
 				sem_details = Service.get_sem_by(sem_id)
@@ -331,12 +409,15 @@ class Service:
 				current_date = datetime.datetime.now()
 				payment.late_reg_penality = 0
 				payment.late_payment_penality = 0
+
 				if(current_date>end_date):
 					payment.late_reg_penality = 2*(abs((current_date-end_date).days))
 				end_date = dt.strptime(str(sem_details.payment_end_date), '%Y-%m-%d')
+
 				if(current_date>end_date):
 					payment.late_payment_penality = 5*(abs((current_date-end_date).days))
-				for course in courses:
+
+				for course in new_courses:
 					insert_query = "INSERT INTO enrolled_courses(user_id, course_id, sem_id, penality) VALUES(%s, %s, %s, %s)"
 					cur.execute(insert_query, (user_id, course[0], course[1], payment.late_reg_penality,))
 					conn.commit()
@@ -1090,7 +1171,8 @@ class Service:
 					course.course_code = obj[9]
 					course.start_dates =Service.get_start_dates(obj[7])
 					course.image = obj[10]
-					course.sem = Service.get_sem_by(sem_id)
+					if(sem_id):
+						course.sem = Service.get_sem_by(sem_id)
 					cur.close()
 					conn.close()
 					return course
@@ -1243,7 +1325,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT user_id FROM enrolled_courses, (SELECT courses.course_id FROM courses \
+				query = "SELECT user_id, gpa FROM enrolled_courses, (SELECT courses.course_id FROM courses \
 				WHERE courses.course_id = %s AND courses.prof_id =%s) AS courses \
 				WHERE courses.course_id = enrolled_courses.course_id"
 				cur.execute(query, (course_id, professor_id))
@@ -1252,7 +1334,9 @@ class Service:
 				students_list = []
 				if(len(students)):
 					for student in students:
-						students_list.append(Service.get_user_by(student[0]))
+						stu = Service.get_user_by(student[0])
+						stu.gpa = float(student[1])
+						students_list.append(stu)
 
 					cur.close()
 					conn.close()

@@ -17,3 +17,13 @@ class User:
         self.image = None
         self.finanical_aid = None
         self.cgpa = None
+        self.gpa =None
+        self.finanical_aid = None
+        self.middle_name = None
+        self.dob = None
+        self.gender = None
+        self.permanent_address = None
+        self.present_address = None
+        self.alt_email = None
+        self.phone = None
+        self.course = None
