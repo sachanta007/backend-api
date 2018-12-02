@@ -14,6 +14,66 @@ from datetime import datetime as dt
 class Service:
 
 	@staticmethod
+	def get_profile_details(user_id):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				select_query = "SELECT first_name, last_name, email, finanical_aid, middle_name, dob, gender, permanent_address,\
+				present_address, alt_email, phone, course, image, color_theme FROM users WHERE user_id = %s"
+				cur.execute(select_query,(user_id,))
+				result = cur.fetchone()
+				user = User()
+				if(result):
+					user.first_name=result[0]
+					user.last_name=result[1]
+					user.email = result[2]
+					user.finanical_aid = result[3]
+					user.middle_name = result[4]
+					user.dob = result[5]
+					user.gender = result[6]
+					user.permanent_address = result[7]
+					user.present_address = result[8]
+					user.alt_email = result[9]
+					user.phone = result[10]
+					user.course = result[11]
+					user.image = result[12]
+					user.color_theme = result[13]
+					gpa_query = "SELECT avg(gpa) FROM enrolled_courses WHERE user_id = %s"
+					cur.execute(gpa_query, (user_id,))
+					user.cgpa = float(cur.fetchone()[0])
+					cur.close()
+					conn.close()
+					return user
+				else:
+					return False
+			else:
+				return False
+		except Exception as e:
+			return  e
+
+	@staticmethod
+	def update_gpa_by_course(courseId, userId,gpa):
+		conn = None
+		cur = None
+		try:
+			conn = PgConfig.db()
+			if(conn):
+				cur = conn.cursor()
+				udpate_query = "UPDATE enrolled_courses SET gpa = %s WHERE user_id = %s AND course_id = %s"
+				cur.execute(udpate_query,(gpa,userId,courseId,))
+				conn.commit()
+				cur.close()
+				conn.close()
+				return True
+			else:
+				return False
+		except Exception as e:
+			return  e
+
+	@staticmethod
 	def pay_fee(data):
 		conn = None
 		cur = None
@@ -216,13 +276,15 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				select_query = "SELECT course_id, sem_id FROM enrolled_courses WHERE enrolled_courses.user_id = %s"
+				select_query = "SELECT course_id, sem_id, gpa FROM enrolled_courses WHERE enrolled_courses.user_id = %s"
 				cur.execute(select_query, (user_id,))
 				response = cur.fetchall()
 				courses_list=[]
 				if(len(response)):
 					for course in response:
-						courses_list.append(Service.get_course_by_id(course[0], course[1]))
+						stu = Service.get_course_by_id(course[0], course[1])
+						stu.gpa = float(course[2])
+						courses_list.append(stu)
 
 					cur.close()
 					conn.close()
@@ -1258,7 +1320,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT user_id FROM enrolled_courses, (SELECT courses.course_id FROM courses \
+				query = "SELECT user_id, gpa FROM enrolled_courses, (SELECT courses.course_id FROM courses \
 				WHERE courses.course_id = %s AND courses.prof_id =%s) AS courses \
 				WHERE courses.course_id = enrolled_courses.course_id"
 				cur.execute(query, (course_id, professor_id))
@@ -1267,7 +1329,9 @@ class Service:
 				students_list = []
 				if(len(students)):
 					for student in students:
-						students_list.append(Service.get_user_by(student[0]))
+						stu = Service.get_user_by(student[0])
+						stu.gpa = float(student[1])
+						students_list.append(stu)
 
 					cur.close()
 					conn.close()
