@@ -424,14 +424,11 @@ def get_all_professors(start, end):
 	try:
 		status = Jwt.decode_auth_token(auth_header)
 		if(status):
-			if(status['role'] == str(1)):
-				response = Service.get_all("PROFESSORS", start, end)
-				if(response):
-					return jsonpickle.encode(response, unpicklable=False), 200
-				else:
-					return jsonify({"Error": "Something went wrong"}), 500
+			response = Service.get_all("PROFESSORS", start, end)
+			if(response):
+				return jsonpickle.encode(response, unpicklable=False), 200
 			else:
-				return jsonify({"Error": "Unauthorised"}), 500
+				return jsonify({"Error": "Something went wrong"}), 500
 		else:
 				return jsonify({"Error": "Invalid token"}), 500
 	except Exception as e:
