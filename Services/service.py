@@ -1081,7 +1081,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT comment, user_id, course_ratings,sem_id FROM course_comments WHERE course_id = %s"
+				query = "SELECT comment, user_id, course_ratings,sem_id, comment_id FROM course_comments WHERE course_id = %s"
 				cur.execute(query, (course_id, ))
 				comments = cur.fetchall()
 				comment_list =[]
@@ -1091,6 +1091,7 @@ class Service:
 					cur.execute(query, (comment[1], ))
 					response = cur.fetchone()
 					user = User()
+					user.comment_id = comment[4]
 					user.first_name = response[0]
 					user.last_name = response[1]
 					user.email = response[2]
