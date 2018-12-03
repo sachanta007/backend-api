@@ -14,7 +14,7 @@ from datetime import datetime as dt
 class Service:
 
 	@staticmethod
-	def get_profile_details(user_id):
+	def get_profile_details(user_id, role_id):
 		conn = None
 		cur = None
 		try:
@@ -41,9 +41,10 @@ class Service:
 					user.course = result[11]
 					user.image = result[12]
 					user.color_theme = result[13]
-					gpa_query = "SELECT avg(gpa) FROM enrolled_courses WHERE user_id = %s"
-					cur.execute(gpa_query, (user_id,))
-					user.cgpa = float(cur.fetchone()[0])
+					if(int(role_id) == 3):
+						gpa_query = "SELECT avg(gpa) FROM enrolled_courses WHERE user_id = %s"
+						cur.execute(gpa_query, (user_id,))
+						user.cgpa = float(cur.fetchone()[0])
 					cur.close()
 					conn.close()
 					return user
@@ -804,7 +805,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT users.first_name, users.last_name, users.email, users.user_id, users.color_theme,\
-				users.image, users.finanical_aid, users.cgpa FROM users, (SELECT user_id FROM user_role WHERE role_id = %s)\
+				users.image, users.finanical_aid, users.cgpa, users.dob FROM users, (SELECT user_id FROM user_role WHERE role_id = %s)\
 				AS user_role WHERE users.user_id = user_role.user_id ORDER BY users.user_id LIMIT %s OFFSET %s"
 				cur.execute(query, (role_id, end, start,))
 				users = cur.fetchall()
@@ -825,6 +826,7 @@ class Service:
 						user.image = response[5]
 						user.finanical_aid = response[6]
 						user.cgpa = response[7]
+						user.dob = response[8]
 						user_list.append(user)
 				else:
 					return False
@@ -1060,8 +1062,8 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				insert_query = "INSERT INTO course_comments(user_id, course_id, comment, course_ratings) VALUES (%s, %s, %s, %s)"
-				cur.execute(insert_query, (data['user_id'], data['course_id'], data['comment'],data['ratings'],));
+				insert_query = "INSERT INTO course_comments(user_id, course_id, comment, course_ratings, sem_id) VALUES (%s, %s, %s, %s,%s)"
+				cur.execute(insert_query, (data['user_id'], data['course_id'], data['comment'],data['ratings'],data['sem_id'],));
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -1079,7 +1081,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT comment, user_id, course_ratings FROM course_comments WHERE course_id = %s"
+				query = "SELECT comment, user_id, course_ratings,sem_id, comment_id FROM course_comments WHERE course_id = %s"
 				cur.execute(query, (course_id, ))
 				comments = cur.fetchall()
 				comment_list =[]
@@ -1089,6 +1091,7 @@ class Service:
 					cur.execute(query, (comment[1], ))
 					response = cur.fetchone()
 					user = User()
+					user.comment_id = comment[4]
 					user.first_name = response[0]
 					user.last_name = response[1]
 					user.email = response[2]
@@ -1097,6 +1100,7 @@ class Service:
 					user.rating = comment[2]
 					user.color_theme = response[4]
 					user.image = response[5]
+					user.sem_id = comment[3]
 					comment_list.append(user)
 
 				cur.close()

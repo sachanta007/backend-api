@@ -27,3 +27,5 @@ class User:
         self.alt_email = None
         self.phone = None
         self.course = None
+        self.sem_id=None
+        self.comment_id = None

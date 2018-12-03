@@ -15,12 +15,12 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 # app = Flask(__name__)
 # app.config.from_object(__name__)
 
-@app.route("/getProfileDetails/user/<userId>", methods=['GET'])
-def get_profile_details(userId):
+@app.route("/getProfileDetails/user/<userId>/role/<roleId>", methods=['GET'])
+def get_profile_details(userId, roleId):
 	try:
 		token = request.headers.get('Authorization')
 		if(Service.auth_token(token)):
-			response = Service.get_profile_details(userId)
+			response = Service.get_profile_details(userId, roleId)
 			if(response):
 				return jsonpickle.encode(response, unpicklable=False), 200
 			else:
