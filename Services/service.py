@@ -805,7 +805,7 @@ class Service:
 			if(conn):
 				cur = conn.cursor()
 				query = "SELECT users.first_name, users.last_name, users.email, users.user_id, users.color_theme,\
-				users.image, users.finanical_aid, users.cgpa FROM users, (SELECT user_id FROM user_role WHERE role_id = %s)\
+				users.image, users.finanical_aid, users.cgpa, users.dob FROM users, (SELECT user_id FROM user_role WHERE role_id = %s)\
 				AS user_role WHERE users.user_id = user_role.user_id ORDER BY users.user_id LIMIT %s OFFSET %s"
 				cur.execute(query, (role_id, end, start,))
 				users = cur.fetchall()
@@ -826,6 +826,7 @@ class Service:
 						user.image = response[5]
 						user.finanical_aid = response[6]
 						user.cgpa = response[7]
+						user.dob = response[8]
 						user_list.append(user)
 				else:
 					return False
