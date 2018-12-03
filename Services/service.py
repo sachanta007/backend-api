@@ -14,7 +14,7 @@ from datetime import datetime as dt
 class Service:
 
 	@staticmethod
-	def get_profile_details(user_id):
+	def get_profile_details(user_id, role_id):
 		conn = None
 		cur = None
 		try:
@@ -41,9 +41,10 @@ class Service:
 					user.course = result[11]
 					user.image = result[12]
 					user.color_theme = result[13]
-					gpa_query = "SELECT avg(gpa) FROM enrolled_courses WHERE user_id = %s"
-					cur.execute(gpa_query, (user_id,))
-					user.cgpa = float(cur.fetchone()[0])
+					if(int(role_id) == 3):
+						gpa_query = "SELECT avg(gpa) FROM enrolled_courses WHERE user_id = %s"
+						cur.execute(gpa_query, (user_id,))
+						user.cgpa = float(cur.fetchone()[0])
 					cur.close()
 					conn.close()
 					return user
@@ -1060,8 +1061,8 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				insert_query = "INSERT INTO course_comments(user_id, course_id, comment, course_ratings) VALUES (%s, %s, %s, %s)"
-				cur.execute(insert_query, (data['user_id'], data['course_id'], data['comment'],data['ratings'],));
+				insert_query = "INSERT INTO course_comments(user_id, course_id, comment, course_ratings, sem_id) VALUES (%s, %s, %s, %s,%s)"
+				cur.execute(insert_query, (data['user_id'], data['course_id'], data['comment'],data['ratings'],data['sem_id'],));
 				conn.commit()
 				cur.close()
 				conn.close()
@@ -1079,7 +1080,7 @@ class Service:
 			conn = PgConfig.db()
 			if(conn):
 				cur = conn.cursor()
-				query = "SELECT comment, user_id, course_ratings FROM course_comments WHERE course_id = %s"
+				query = "SELECT comment, user_id, course_ratings,sem_id FROM course_comments WHERE course_id = %s"
 				cur.execute(query, (course_id, ))
 				comments = cur.fetchall()
 				comment_list =[]
@@ -1097,6 +1098,7 @@ class Service:
 					user.rating = comment[2]
 					user.color_theme = response[4]
 					user.image = response[5]
+					user.sem_id = comment[3]
 					comment_list.append(user)
 
 				cur.close()
