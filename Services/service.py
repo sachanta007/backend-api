@@ -850,6 +850,11 @@ class Service:
 				if(obj):
 					user.first_name = obj[0]
 					user.last_name = obj[1]
+					user.full_name = ''
+					if(obj[0]):
+						user.full_name = user.full_name + str(obj[0])
+					if(obj[1]):
+						user.full_name = user.full_name+' '+str(obj[1])
 					user.email = obj[2]
 					user.color_theme = obj[3]
 					user.image = obj[4]
