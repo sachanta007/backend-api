@@ -428,7 +428,7 @@ class Service:
 					delete_from_cart_table = "DELETE FROM cart WHERE course_id = %s and user_id = %s and sem_id = %s"
 					cur.execute(delete_from_cart_table, (course[0], user_id,sem_id,))
 					conn.commit()
-				payment.cost = 1300 * len(courses)
+				payment.cost = 1300 * len(new_courses)
 				finanical_aid_query = "SELECT finanical_aid FROM users WHERE user_id = %s"
 				cur.execute(finanical_aid_query, (user_id,))
 				obj = cur.fetchone()
