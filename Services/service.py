@@ -44,7 +44,10 @@ class Service:
 					if(int(role_id) == 3):
 						gpa_query = "SELECT avg(gpa) FROM enrolled_courses WHERE user_id = %s"
 						cur.execute(gpa_query, (user_id,))
-						user.cgpa = float(cur.fetchone()[0])
+						cgpa = cur.fetchone()[0]
+						user.cgpa = 0
+						if(cgpa):
+							user.cgpa = round(float(cgpa),2)
 					cur.close()
 					conn.close()
 					return user
